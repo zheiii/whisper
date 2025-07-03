@@ -32,14 +32,10 @@ export function Header() {
       <div className="flex items-center gap-4">
         <SignedOut>
           <SignInButton>
-            <Button variant="ghost" onClick={handleLogin}>
-              Login
-            </Button>
+            <Button variant="ghost">Login</Button>
           </SignInButton>
           <SignUpButton>
-            <Button onClick={handleSignUp} className="font-medium">
-              Sign up
-            </Button>
+            <Button className="font-medium">Sign up</Button>
           </SignUpButton>
         </SignedOut>
         <SignedIn>
