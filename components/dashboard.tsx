@@ -122,22 +122,22 @@ export function Dashboard({
         </div>
 
         {/* Action Buttons */}
-        <div className="fixed bottom-6 left-1/2 transform -translate-x-1/2 flex flex-col gap-3 w-full max-w-sm px-6">
+        <div className="fixed bottom-6 left-1/2 md:left-0 transform -translate-x-1/2 md:translate-0 flex flex-col gap-3 w-full max-w-sm px-6 md:flex-row md:gap-3">
           <Button
             variant="outline"
             size="lg"
             onClick={handleUploadVoiceNote}
             className="w-full bg-transparent"
           >
-            <Upload className="w-4 h-4 mr-2" />
+            <img src="/upload.svg" className="w-5 h-5 size-5 mr-2" />
             Upload Voice Note
           </Button>
           <Button
             size="lg"
             onClick={handleNewWhisper}
-            className="w-full bg-slate-900 hover:bg-slate-800"
+            className="w-full bg-[#101828] text-base font-semibold text-left text-white"
           >
-            <Mic className="w-4 h-4 mr-2" />
+            <img src="/microphone.svg" className="w-5 h-5 size-5 mr-2" />
             New Whisper
           </Button>
         </div>

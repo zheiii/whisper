@@ -46,38 +46,29 @@ export const BeforeRecording = ({
   setNoteType: (noteType: string) => void;
 }) => {
   return (
-    <>
-      {/* Middle section: Note type selection */}
-      <div className="w-full flex flex-col px-5 py-6 border-y border-gray-200">
-        <div className="flex items-center mb-2">
-          <span className="text-base font-medium text-left text-[#101828] mr-1">
-            What are you creating?
-          </span>
-          <span className="text-base font-medium text-left text-[#6a7282]">
-            [OPTIONAL]
-          </span>
-        </div>
-        <div className="w-full">
-          <Select value={noteType} onValueChange={setNoteType}>
-            <SelectTrigger className="w-full h-9 bg-gray-100 border border-[#d1d5dc] rounded-lg">
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="quick-note">📝 Quick note</SelectItem>
-              <SelectItem value="meeting-notes">📋 Meeting notes</SelectItem>
-              <SelectItem value="voice-memo">🎤 Voice memo</SelectItem>
-              <SelectItem value="idea">💡 Idea</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
+    <div className="w-full flex flex-col px-5 py-6 border-b border-gray-200">
+      <div className="flex items-center mb-2">
+        <span className="text-base font-medium text-left text-[#101828] mr-1">
+          What are you creating?
+        </span>
+        <span className="text-base font-medium text-left text-[#6a7282]">
+          [OPTIONAL]
+        </span>
       </div>
-      {/* Bottom section: Recordings left */}
-      <div className="w-full flex flex-col py-3 px-5">
-        <div className="text-sm font-light text-[#4a5565]">
-          Recordings left: 5
-        </div>
+      <div className="w-full">
+        <Select value={noteType} onValueChange={setNoteType}>
+          <SelectTrigger className="w-full h-9 bg-gray-100 border border-[#d1d5dc] rounded-lg">
+            <SelectValue />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="quick-note">📝 Quick note</SelectItem>
+            <SelectItem value="meeting-notes">📋 Meeting notes</SelectItem>
+            <SelectItem value="voice-memo">🎤 Voice memo</SelectItem>
+            <SelectItem value="idea">💡 Idea</SelectItem>
+          </SelectContent>
+        </Select>
       </div>
-    </>
+    </div>
   );
 };
 
@@ -179,6 +170,22 @@ export function RecordingModal({
   const [noteType, setNoteType] = useState("quick-note");
   const [isProcessing, setIsProcessing] = useState(false);
   const [hasRecording, setHasRecording] = useState(false);
+  const [micPermission, setMicPermission] = useState<
+    "granted" | "denied" | "prompt" | null
+  >(null);
+
+  // Check microphone permission on mount
+  useEffect(() => {
+    if (typeof window !== "undefined" && navigator.permissions) {
+      navigator.permissions
+        .query({ name: "microphone" as PermissionName })
+        .then((result) => {
+          setMicPermission(result.state as "granted" | "denied" | "prompt");
+          result.onchange = () =>
+            setMicPermission(result.state as "granted" | "denied" | "prompt");
+        });
+    }
+  }, []);
 
   // Recording time logic without intervalRef
   useEffect(() => {
@@ -274,33 +281,22 @@ export function RecordingModal({
 
   return (
     <Dialog open onOpenChange={onClose}>
-      <DialogContent className="!max-w-[392px] !p-0 border border-gray-200 rounded-tl-xl rounded-tr-xl bg-white overflow-hidden">
+      <DialogContent
+        showCloseButton={false}
+        className="!max-w-[392px] !p-0 border border-gray-200 rounded-tl-xl rounded-tr-xl bg-white overflow-hidden gap-0"
+      >
         <DialogHeader className="p-0">
           <DialogTitle className="sr-only">{title}</DialogTitle>
         </DialogHeader>
-        {/* Top section: dark rounded rectangle with recording button */}
-        <div className="flex flex-col items-center w-full bg-white">
-          <Button
-            className={cn(
-              isRecording ? "bg-[#6D1414]" : "bg-[#101828]",
-              "w-[352px] h-[86px] rounded-xl flex flex-col items-center justify-center mb-5"
-            )}
-            onClick={isRecording ? handleStopRecording : handleStartRecording}
-            disabled={isProcessing}
-          >
-            {isRecording ? (
-              <img
-                src="/stop.svg"
-                className="min-w-9 min-h-9 size-9 text-white"
-              />
-            ) : (
-              <img
-                src="/microphone.svg"
-                className="min-w-9 min-h-9 size-9 text-white"
-              />
-            )}
-          </Button>
+        {/* Microphone permission warning */}
+        {micPermission === "denied" && (
+          <div className="bg-red-100 text-red-700 text-sm px-4 py-2 text-center">
+            Microphone access denied. Please enable it in your browser settings
+            to record audio.
+          </div>
+        )}
 
+        <div className="flex flex-col items-center w-full bg-white">
           {!isRecording ? (
             <BeforeRecording noteType={noteType} setNoteType={setNoteType} />
           ) : (
@@ -318,6 +314,35 @@ export function RecordingModal({
 
               <div className="size-10 bg-[#1E2939] p-2.5 rounded-xl">
                 <img src="/pause.svg" className="size-5 min-w-5" />
+              </div>
+            </div>
+          )}
+
+          <Button
+            className={cn(
+              isRecording ? "bg-[#6D1414]" : "bg-[#101828]",
+              "w-[352px] h-[86px] rounded-xl flex flex-col items-center justify-center my-5"
+            )}
+            onClick={isRecording ? handleStopRecording : handleStartRecording}
+            disabled={isProcessing}
+          >
+            {isRecording ? (
+              <img
+                src="/stop.svg"
+                className="min-w-9 min-h-9 size-9 text-white"
+              />
+            ) : (
+              <img
+                src="/microphone.svg"
+                className="min-w-9 min-h-9 size-9 text-white"
+              />
+            )}
+          </Button>
+
+          {!isRecording && (
+            <div className="w-full flex flex-col py-3 px-5 border-t border-gray-200">
+              <div className="text-sm font-light text-[#4a5565]">
+                Recordings left: 5
               </div>
             </div>
           )}
