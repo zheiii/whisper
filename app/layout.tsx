@@ -26,7 +26,7 @@ export default function RootLayout({
     <ClerkProvider>
       <html lang="en">
         <body className={`${raleway.variable} antialiased`}>
-          <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
+          <div className="min-h-screen bg-white">
             <Header />
             {children}
           </div>

@@ -11,24 +11,16 @@ import {
   SignUpButton,
   UserButton,
 } from "@clerk/nextjs";
+import Link from "next/link";
 export function Header() {
   const router = useRouter();
-  const handleLogin = () => {
-    // Simulate login
-    localStorage.setItem("whisper-authenticated", "true");
-    router.push("/whispers");
-  };
-  const handleSignUp = () => {
-    // Simulate signup
-    localStorage.setItem("whisper-authenticated", "true");
-    router.push("/whispers");
-  };
+
   return (
     <header className="flex items-center justify-between p-4 bg-gray-50 border-b border-gray-200">
-      <div className="flex items-center gap-2">
+      <Link href="/" className="flex items-center gap-2">
         <Mic className="w-6 h-6" />
         <span className="text-xl font-semibold">Whisper</span>
-      </div>
+      </Link>
       <div className="flex items-center gap-4">
         <SignedOut>
           <SignInButton>

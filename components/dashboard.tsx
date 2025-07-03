@@ -78,11 +78,11 @@ export function Dashboard({
 
           {/* Empty State or Transcriptions List */}
           {filteredTranscriptions.length === 0 && searchQuery === "" ? (
-            <div className="text-center py-16">
-              <h2 className="text-xl font-semibold mb-2">
+            <div className="text-center py-16 flex flex-col items-center">
+              <h2 className="text-xl font-medium text-left text-black mb-2">
                 Welcome, whisperer!
               </h2>
-              <p className="text-muted-foreground mb-8">
+              <p className="max-w-[264px] text-base text-center text-[#364153] mb-8">
                 Start by creating a new Whisper, or
                 <br />
                 upload a voice note for
