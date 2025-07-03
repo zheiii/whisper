@@ -1,45 +1,15 @@
-"use client"
+"use client";
 
-import { useRouter } from "next/navigation"
-import { Button } from "@/components/ui/button"
-import { Mic } from "lucide-react"
+import { useRouter } from "next/navigation";
+import { Button } from "@/components/ui/button";
+import { Mic } from "lucide-react";
+import { SignInButton } from "@clerk/nextjs";
 
 export function LandingPage() {
-  const router = useRouter()
-
-  const handleStartNoteTaking = () => {
-    localStorage.setItem("whisper-authenticated", "true")
-    router.push("/whispers")
-  }
-
-  const handleLogin = () => {
-    // Simulate login
-    localStorage.setItem("whisper-authenticated", "true")
-    router.push("/whispers")
-  }
-
-  const handleSignUp = () => {
-    // Simulate signup
-    localStorage.setItem("whisper-authenticated", "true")
-    router.push("/whispers")
-  }
+  const router = useRouter();
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100">
-      {/* Header */}
-      <header className="flex items-center justify-between p-6">
-        <div className="flex items-center gap-2">
-          <Mic className="w-6 h-6" />
-          <span className="text-xl font-semibold">Whisper</span>
-        </div>
-        <div className="flex items-center gap-4">
-          <Button variant="ghost" onClick={handleLogin}>
-            Login
-          </Button>
-          <Button onClick={handleSignUp}>Sign up</Button>
-        </div>
-      </header>
-
+    <>
       {/* Main Content */}
       <main className="container mx-auto px-6 py-16 text-center">
         <div className="mb-8">
@@ -54,20 +24,23 @@ export function LandingPage() {
           </h1>
 
           <p className="text-xl text-muted-foreground mb-8 max-w-md mx-auto">
-            Transform your voice into organized text and insights. Our AI transcribes your speech instantly and cleans
-            it up!
+            Transform your voice into organized text and insights. Our AI
+            transcribes your speech instantly and cleans it up!
           </p>
 
-          <Button
-            size="lg"
-            onClick={handleStartNoteTaking}
-            className="bg-slate-900 hover:bg-slate-800 text-white px-8 py-3"
-          >
-            <Mic className="w-4 h-4 mr-2" />
-            Start Note-Taking
-          </Button>
+          <SignInButton>
+            <Button
+              size="lg"
+              className="bg-slate-900 hover:bg-slate-800 text-white px-8 py-3"
+            >
+              <Mic className="w-4 h-4 mr-2" />
+              Start Note-Taking
+            </Button>
+          </SignInButton>
 
-          <p className="text-sm text-muted-foreground mt-4">Free & open source</p>
+          <p className="text-sm text-muted-foreground mt-4">
+            Free & open source
+          </p>
         </div>
 
         {/* Demo Section */}
@@ -92,20 +65,25 @@ export function LandingPage() {
               <span className="text-muted-foreground">no </span>
               <span className="font-medium">almond milk after work</span>
               <span className="text-muted-foreground">oh, </span>
-              <span className="font-medium">and schedule dentist appointment</span>
+              <span className="font-medium">
+                and schedule dentist appointment
+              </span>
               <span className="text-muted-foreground"> before I forget</span>
               <span className="text-muted-foreground">"</span>
             </div>
           </div>
 
           <div className="flex items-center gap-2 text-sm text-muted-foreground">
-            <div className="w-6 h-6 bg-slate-900 rounded flex items-center justify-center text-white text-xs">In</div>
+            <div className="w-6 h-6 bg-slate-900 rounded flex items-center justify-center text-white text-xs">
+              In
+            </div>
             <span>
-              Press a button and <span className="font-medium">start transcribing</span>
+              Press a button and{" "}
+              <span className="font-medium">start transcribing</span>
             </span>
           </div>
         </div>
       </main>
-    </div>
-  )
+    </>
+  );
 }
