@@ -7,6 +7,7 @@ import { Mic, Upload, Search, Star, MessageCircle, User } from "lucide-react";
 import { RecordingModal } from "@/components/recording-modal";
 import type { Transcription } from "@/app/page";
 import { useRouter } from "next/navigation";
+import { UploadModal } from "./UploadModal";
 
 interface DashboardProps {
   transcriptions: Transcription[];
@@ -20,9 +21,8 @@ export function Dashboard({
   onSelectTranscription,
 }: DashboardProps) {
   const [searchQuery, setSearchQuery] = useState("");
-  const [isRecording, setIsRecording] = useState(false);
   const [showRecordingModal, setShowRecordingModal] = useState(false);
-  const router = useRouter();
+  const [showUploadModal, setShowUploadModal] = useState(false);
 
   const filteredTranscriptions = transcriptions.filter(
     (t) =>
@@ -35,28 +35,7 @@ export function Dashboard({
   };
 
   const handleUploadVoiceNote = () => {
-    // Simulate file upload
-    const input = document.createElement("input");
-    input.type = "file";
-    input.accept = "audio/*";
-    input.onchange = (e) => {
-      const file = (e.target as HTMLInputElement).files?.[0];
-      if (file) {
-        // Simulate transcription
-        setTimeout(() => {
-          onAddTranscription({
-            title: `Uploaded: ${file.name}`,
-            content:
-              "This is a simulated transcription of your uploaded audio file. In a real implementation, this would be processed by Whisper AI to convert speech to text.",
-            preview:
-              "This is a simulated transcription of your uploaded audio file...",
-            timestamp: new Date().toLocaleDateString(),
-            duration: "2:34",
-          });
-        }, 1000);
-      }
-    };
-    input.click();
+    setShowUploadModal(true);
   };
 
   return (
@@ -152,6 +131,14 @@ export function Dashboard({
       {showRecordingModal && (
         <RecordingModal
           onClose={() => setShowRecordingModal(false)}
+          onSave={onAddTranscription}
+        />
+      )}
+
+      {/* Upload Modal */}
+      {showUploadModal && (
+        <UploadModal
+          onClose={() => setShowUploadModal(false)}
           onSave={onAddTranscription}
         />
       )}

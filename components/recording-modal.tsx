@@ -15,7 +15,6 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Mic, Square } from "lucide-react";
 import { cn, MAIN_LANGUAGES } from "@/lib/utils";
 
 interface RecordingModalProps {
