@@ -61,19 +61,22 @@ export function Dashboard({
 
   return (
     <>
-      <div className="container mx-auto px-6 py-8">
+      <div className=" mx-auto">
         <div className="mb-8">
-          <h1 className="text-2xl font-bold mb-6">Your Whispers</h1>
+          <div className="mx-auto max-w-[729px] w-full md:rounded-xl bg-white border-b-[0.7px] md:border-[0.7px] border-gray-200 md:border-[#d1d5dc] px-6 py-5 flex flex-col gap-3 md:mt-4">
+            <h1 className="text-xl font-semibold text-left text-[#101828]">
+              Your Whispers
+            </h1>
 
-          {/* Search */}
-          <div className="relative mb-6">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder="Search"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              className="pl-10"
-            />
+            <div className="relative">
+              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+              <Input
+                placeholder="Search"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                className="pl-10"
+              />
+            </div>
           </div>
 
           {/* Empty State or Transcriptions List */}
@@ -122,24 +125,26 @@ export function Dashboard({
         </div>
 
         {/* Action Buttons */}
-        <div className="fixed bottom-6 left-1/2 md:left-0 transform -translate-x-1/2 md:translate-0 flex flex-col gap-3 w-full max-w-sm px-6 md:flex-row md:gap-3">
-          <Button
-            variant="outline"
-            size="lg"
-            onClick={handleUploadVoiceNote}
-            className="w-full bg-transparent"
-          >
-            <img src="/upload.svg" className="w-5 h-5 size-5 mr-2" />
-            Upload Voice Note
-          </Button>
-          <Button
-            size="lg"
-            onClick={handleNewWhisper}
-            className="w-full bg-[#101828] text-base font-semibold text-left text-white"
-          >
-            <img src="/microphone.svg" className="w-5 h-5 size-5 mr-2" />
-            New Whisper
-          </Button>
+        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[688px] flex justify-center items-center px-6 pb-4">
+          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-3 w-full">
+            <Button
+              variant="outline"
+              size="lg"
+              onClick={handleUploadVoiceNote}
+              className="w-full rounded-lg bg-gray-100 border border-[#d1d5dc] text-base h-[42px]"
+            >
+              <img src="/upload.svg" className="w-5 h-5 size-5" />
+              Upload Voice Note
+            </Button>
+            <Button
+              size="lg"
+              onClick={handleNewWhisper}
+              className="w-full bg-[#101828] text-base text-left text-white rounded-lg h-[42px]"
+            >
+              <img src="/microphone.svg" className="w-5 h-5 size-5" />
+              New Whisper
+            </Button>
+          </div>
         </div>
       </div>
 
