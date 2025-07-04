@@ -3,6 +3,7 @@ import { ClerkProvider } from "@clerk/nextjs";
 import { Raleway } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/Header";
+import { Toaster } from "@/components/ui/sonner";
 
 const raleway = Raleway({
   variable: "--font-raleway",
@@ -32,6 +33,7 @@ export default function RootLayout({
           <div className="min-h-screen bg-white">
             <Header />
             {children}
+            <Toaster richColors />
           </div>
         </body>
       </html>

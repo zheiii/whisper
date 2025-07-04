@@ -3,10 +3,9 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Mic, Upload, Search, Star, MessageCircle, User } from "lucide-react";
+import { Search } from "lucide-react";
 import { RecordingModal } from "@/components/recording-modal";
 import type { Transcription } from "@/app/page";
-import { useRouter } from "next/navigation";
 import { UploadModal } from "./UploadModal";
 
 interface DashboardProps {
@@ -42,7 +41,7 @@ export function Dashboard({
     <>
       <div className=" mx-auto">
         <div className="mb-8">
-          <div className="mx-auto max-w-[729px] w-full md:rounded-xl bg-white border-b-[0.7px] md:border-[0.7px] border-gray-200 md:border-[#d1d5dc] px-6 py-5 flex flex-col gap-3 md:mt-4">
+          <div className="mx-auto max-w-[729px] w-full md:rounded-xl bg-white border-b-[0.7px] md:border-[0.7px] border-gray-200 md:border-[#d1d5dc] px-6 py-5 flex flex-col gap-3 md:my-4 ">
             <h1 className="text-xl font-semibold text-left text-[#101828]">
               Your Whispers
             </h1>
@@ -73,7 +72,7 @@ export function Dashboard({
               </p>
             </div>
           ) : (
-            <div className="space-y-4">
+            <div className="space-y-4 mx-auto max-w-[455px]">
               {filteredTranscriptions.map((transcription) => (
                 <div
                   key={transcription.id}
