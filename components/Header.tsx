@@ -1,7 +1,7 @@
 "use client";
 
 import { Mic } from "lucide-react";
-import { useRouter } from "next/navigation";
+import { usePathname, useRouter } from "next/navigation";
 import React from "react";
 import { Button } from "./ui/button";
 import {
@@ -10,19 +10,42 @@ import {
   SignInButton,
   SignUpButton,
   UserButton,
+  useUser,
 } from "@clerk/nextjs";
 import Link from "next/link";
 export function Header() {
+  const pathname = usePathname();
+  const { user } = useUser();
+
+  // /whispers/1234567890
+  const isSingleWhisperPage =
+    pathname.startsWith("/whispers/") && pathname.length > 11;
+
   return (
     <header className="flex items-center justify-between p-4 bg-gray-50 border-b border-gray-200">
-      <Link href="/" className="flex items-center gap-2">
-        <img src="/logo.svg" className="min-w-5 min-h-5 size-5" />
-        <img
-          src="/logoGradient.svg"
-          alt="whisper"
-          className="w-[71px] min-h-[25px] h-[25px]"
-        />
-      </Link>
+      {isSingleWhisperPage ? (
+        <Link href="/whispers/" className="flex items-center gap-2">
+          <img
+            src="/back.svg"
+            className="min-w-[14px] min-h-[14px] size-[14px]"
+          />
+          <span className="text-base font-medium text-[#4A5565]">
+            My Whispers
+          </span>
+        </Link>
+      ) : (
+        <Link
+          href={user?.id ? "/whispers/" : "/"}
+          className="flex items-center gap-2"
+        >
+          <img src="/logo.svg" className="min-w-5 min-h-5 size-5" />
+          <img
+            src="/logoGradient.svg"
+            alt="whisper"
+            className="w-[71px] min-h-[25px] h-[25px]"
+          />
+        </Link>
+      )}
       <div className="flex items-center gap-2">
         <SignedOut>
           <SignInButton>

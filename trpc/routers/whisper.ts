@@ -1,6 +1,8 @@
 import { t } from "../init";
 import { z } from "zod";
 import { PrismaClient } from "../../lib/generated/prisma";
+import { fal } from "@fal-ai/client";
+import { v4 as uuidv4 } from "uuid";
 
 const prisma = new PrismaClient();
 
@@ -50,5 +52,74 @@ export const whisperRouter = t.router({
         timestamp: whisper.createdAt.toISOString(),
         duration: input.duration,
       };
+    }),
+  transcribeFromS3: t.procedure
+    .input(z.object({ audioUrl: z.string(), whisperId: z.string().optional() }))
+    .mutation(async ({ input }) => {
+      // 1. Call Fal Whisper
+      fal.config({ credentials: process.env.FAL_KEY! });
+      const result = await fal.subscribe("fal-ai/whisper", {
+        input: { audio_url: input.audioUrl },
+      });
+      const transcription = result.data.text as string;
+      // Generate a title from the transcription (first 8 words or fallback)
+      const title = transcription
+        ? transcription.split(" ").slice(0, 8).join(" ") +
+          (transcription.split(" ").length > 8 ? "..." : "")
+        : "Untitled Whisper";
+
+      if (input.whisperId) {
+        // Add AudioTrack to existing Whisper
+        const whisper = await prisma.whisper.findUnique({
+          where: { id: input.whisperId },
+        });
+        if (!whisper) throw new Error("Whisper not found");
+        // Create new AudioTrack
+        await prisma.audioTrack.create({
+          data: {
+            fileUrl: input.audioUrl,
+            partialTranscription: transcription,
+            whisperId: input.whisperId,
+          },
+        });
+        // Append to fullTranscription
+        await prisma.whisper.update({
+          where: { id: input.whisperId },
+          data: {
+            fullTranscription: whisper.fullTranscription + "\n" + transcription,
+          },
+        });
+        return { id: input.whisperId };
+      } else {
+        // Create new Whisper and first AudioTrack
+        const newId = uuidv4();
+        await prisma.whisper.create({
+          data: {
+            id: newId,
+            title,
+            userId: "anonymous", // or set to null if you update schema
+            fullTranscription: transcription,
+            audioTracks: {
+              create: [
+                {
+                  fileUrl: input.audioUrl,
+                  partialTranscription: transcription,
+                },
+              ],
+            },
+          },
+        });
+        return { id: newId };
+      }
+    }),
+  getWhisperWithTracks: t.procedure
+    .input(z.object({ id: z.string() }))
+    .query(async ({ input }) => {
+      const whisper = await prisma.whisper.findUnique({
+        where: { id: input.id },
+        include: { audioTracks: { orderBy: { createdAt: "asc" } } },
+      });
+      if (!whisper) throw new Error("Whisper not found");
+      return whisper;
     }),
 });

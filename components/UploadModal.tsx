@@ -9,25 +9,22 @@ import {
 import Dropzone from "react-dropzone";
 import React, { useCallback, useState } from "react";
 import { toast } from "sonner";
+import { useS3Upload } from "next-s3-upload";
+import { useRouter } from "next/navigation";
+import { useTRPC } from "@/trpc/client";
+import { useMutation } from "@tanstack/react-query";
 
-export function UploadModal({
-  onClose,
-  onSave,
-}: {
-  onClose: () => void;
-  onSave: (transcription: {
-    title: string;
-    content: string;
-    preview: string;
-    timestamp: string;
-    duration?: string;
-    file?: File;
-  }) => void;
-}) {
+export function UploadModal({ onClose }: { onClose: () => void }) {
   const [isDragActive, setIsDragActive] = useState(false);
+  const { uploadToS3 } = useS3Upload();
+  const router = useRouter();
+  const trpc = useTRPC();
+  const transcribeMutation = useMutation(
+    trpc.whisper.transcribeFromS3.mutationOptions()
+  );
 
   const handleDrop = useCallback(
-    (acceptedFiles: File[]) => {
+    async (acceptedFiles: File[]) => {
       const file = acceptedFiles[0];
       if (!file) {
         toast.error(
@@ -35,16 +32,18 @@ export function UploadModal({
         );
         return;
       }
-      // You can process the file here (e.g., get duration, etc.)
-      onSave({
-        title: file.name,
-        content: "",
-        preview: "",
-        timestamp: new Date().toISOString(),
-        file,
-      });
+      try {
+        // Upload to S3
+        const { url } = await uploadToS3(file);
+        // Call tRPC mutation
+        const { id } = await transcribeMutation.mutateAsync({ audioUrl: url });
+        // Redirect to whisper page
+        router.push(`/whispers/${id}`);
+      } catch (err) {
+        toast.error("Failed to transcribe audio. Please try again.");
+      }
     },
-    [onSave]
+    [uploadToS3, transcribeMutation, router]
   );
 
   return (

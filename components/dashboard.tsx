@@ -21,11 +21,13 @@ export function Dashboard({
   const [showRecordingModal, setShowRecordingModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
 
-  const filteredTranscriptions = transcriptions.filter(
-    (t) =>
-      t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
-      t.content.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+  const filteredTranscriptions = searchQuery
+    ? transcriptions.filter(
+        (t) =>
+          t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          t.content.toLowerCase().includes(searchQuery.toLowerCase())
+      )
+    : transcriptions;
 
   const handleNewWhisper = () => {
     setShowRecordingModal(true);
@@ -134,10 +136,7 @@ export function Dashboard({
 
       {/* Upload Modal */}
       {showUploadModal && (
-        <UploadModal
-          onClose={() => setShowUploadModal(false)}
-          onSave={onAddTranscription}
-        />
+        <UploadModal onClose={() => setShowUploadModal(false)} />
       )}
     </>
   );

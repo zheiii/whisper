@@ -64,6 +64,8 @@ export default function WhispersPage() {
     return <Spinner />;
   }
 
+  console.log("transcriptions", transcriptions);
+
   return (
     <Dashboard
       transcriptions={transcriptions}
