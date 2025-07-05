@@ -48,3 +48,5 @@ next-env.d.ts
 
 # Remove npm lockfile if present
 !package-lock.json
+
+/lib/generated/prisma
