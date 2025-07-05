@@ -1,52 +1,73 @@
-"use client"
+"use client";
 
-import { useState, useEffect } from "react"
-import { useRouter } from "next/navigation"
-import { Dashboard } from "@/components/dashboard"
+import { useRouter } from "next/navigation";
+import { Dashboard } from "@/components/dashboard";
+import { useUser } from "@clerk/nextjs";
+import { useTRPC } from "@/trpc/client";
+import { useQuery } from "@tanstack/react-query";
+import { useEffect } from "react";
 
 export interface Transcription {
-  id: string
-  title: string
-  content: string
-  preview: string
-  timestamp: string
-  duration?: string
+  id: string;
+  title: string;
+  content: string;
+  preview: string;
+  timestamp: string;
+  duration?: string;
+}
+
+function Spinner() {
+  return (
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "center",
+        alignItems: "center",
+        minHeight: "40vh",
+      }}
+    >
+      <img
+        src="/spinner.svg"
+        alt="Loading..."
+        className="w-8 h-8 animate-spin"
+      />
+    </div>
+  );
 }
 
 export default function WhispersPage() {
-  const [transcriptions, setTranscriptions] = useState<Transcription[]>([])
-  const router = useRouter()
+  const router = useRouter();
+  const { user } = useUser();
+  const trpc = useTRPC();
 
-  // Load transcriptions from localStorage on mount
   useEffect(() => {
-    const saved = localStorage.getItem("whisper-transcriptions")
-    if (saved) {
-      setTranscriptions(JSON.parse(saved))
+    if (user === null) {
+      router.push("/");
     }
-  }, [])
+  }, [user, router]);
 
-  // Save transcriptions to localStorage whenever they change
-  useEffect(() => {
-    localStorage.setItem("whisper-transcriptions", JSON.stringify(transcriptions))
-  }, [transcriptions])
+  const { data: transcriptions = [], isLoading } = useQuery(
+    trpc.whisper.listWhispers.queryOptions(
+      { userId: user?.id || "" },
+      {
+        enabled: !!user?.id,
+      }
+    )
+  );
 
+  // Placeholder for add (should use mutation in future)
   const handleAddTranscription = (transcription: Omit<Transcription, "id">) => {
-    const newTranscription: Transcription = {
-      ...transcription,
-      id: Date.now().toString(),
-    }
-    setTranscriptions((prev) => [newTranscription, ...prev])
-  }
+    // TODO: call tRPC mutation to create whisper
+  };
 
-  const handleSelectTranscription = (transcription: Transcription) => {
-    router.push(`/whispers/${transcription.id}`)
+  if (isLoading) {
+    return <Spinner />;
   }
 
   return (
     <Dashboard
       transcriptions={transcriptions}
       onAddTranscription={handleAddTranscription}
-      onSelectTranscription={handleSelectTranscription}
     />
-  )
+  );
 }

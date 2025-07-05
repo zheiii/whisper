@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { Link, Search } from "lucide-react";
 import { RecordingModal } from "@/components/recording-modal";
 import type { Transcription } from "@/app/page";
 import { UploadModal } from "./UploadModal";
@@ -11,13 +11,11 @@ import { UploadModal } from "./UploadModal";
 interface DashboardProps {
   transcriptions: Transcription[];
   onAddTranscription: (transcription: Omit<Transcription, "id">) => void;
-  onSelectTranscription: (transcription: Transcription) => void;
 }
 
 export function Dashboard({
   transcriptions,
   onAddTranscription,
-  onSelectTranscription,
 }: DashboardProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [showRecordingModal, setShowRecordingModal] = useState(false);
@@ -74,9 +72,9 @@ export function Dashboard({
           ) : (
             <div className="space-y-4 mx-auto max-w-[455px]">
               {filteredTranscriptions.map((transcription) => (
-                <div
+                <Link
+                  href={`/whispers/${transcription.id}`}
                   key={transcription.id}
-                  onClick={() => onSelectTranscription(transcription)}
                   className="bg-white rounded-lg p-4 border border-slate-200 hover:border-slate-300 cursor-pointer transition-colors"
                 >
                   <div className="flex items-start gap-3">
@@ -96,7 +94,7 @@ export function Dashboard({
                       </div>
                     </div>
                   </div>
-                </div>
+                </Link>
               ))}
             </div>
           )}

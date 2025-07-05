@@ -1,9 +1,23 @@
 "use client";
 
 import { Button } from "@/components/ui/button";
-import { SignInButton } from "@clerk/nextjs";
+import { SignInButton, useUser } from "@clerk/nextjs";
+import Link from "next/link";
 
 export function LandingPage() {
+  const { user } = useUser();
+
+  // Shared CTA button
+  const CTAButton = (
+    <Button
+      size="lg"
+      className="bg-slate-900 hover:bg-slate-800 text-base text-center text-white px-2 py-4 flex flex-row items-center justify-center gap-2 leading-5 w-[190px] h-[36px] rounded-[8px]"
+    >
+      <img src="/microphone.svg" className="size-5 min-w-5" />
+      Start Note-Taking
+    </Button>
+  );
+
   return (
     <>
       {/* Main Content */}
@@ -35,15 +49,13 @@ export function LandingPage() {
             transcribes your speech instantly and cleans it up!
           </p>
 
-          <SignInButton>
-            <Button
-              size="lg"
-              className="bg-slate-900 hover:bg-slate-800 text-base text-center text-white px-2 py-4 flex flex-row items-center justify-center gap-2 leading-5 w-[190px] h-[36px] rounded-[8px]"
-            >
-              <img src="/microphone.svg" className="size-5 min-w-5" />
-              Start Note-Taking
-            </Button>
-          </SignInButton>
+          {user ? (
+            <Link href="/whispers" className="w-[190px] h-[36px]">
+              {CTAButton}
+            </Link>
+          ) : (
+            <SignInButton>{CTAButton}</SignInButton>
+          )}
 
           <p className="text-sm text-center text-[#6a7282] mt-2">
             Free &amp; open source

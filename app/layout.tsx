@@ -4,6 +4,7 @@ import { Raleway } from "next/font/google";
 import "./globals.css";
 import { Header } from "@/components/Header";
 import { Toaster } from "@/components/ui/sonner";
+import { TRPCReactProvider } from "@/trpc/client";
 
 const raleway = Raleway({
   variable: "--font-raleway",
@@ -28,15 +29,17 @@ export default function RootLayout({
   // Place a ClientHeader component below
   return (
     <ClerkProvider>
-      <html lang="en">
-        <body className={`${raleway.variable} antialiased`}>
-          <div className="min-h-screen bg-white">
-            <Header />
-            {children}
-            <Toaster richColors />
-          </div>
-        </body>
-      </html>
+      <TRPCReactProvider>
+        <html lang="en">
+          <body className={`${raleway.variable} antialiased`}>
+            <div className="min-h-screen bg-white">
+              <Header />
+              {children}
+              <Toaster richColors />
+            </div>
+          </body>
+        </html>
+      </TRPCReactProvider>
     </ClerkProvider>
   );
 }
