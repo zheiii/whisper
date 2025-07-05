@@ -3,31 +3,29 @@ import { z } from "zod";
 import { PrismaClient } from "../../lib/generated/prisma";
 import { fal } from "@fal-ai/client";
 import { v4 as uuidv4 } from "uuid";
+import { protectedProcedure } from "../init";
 
 const prisma = new PrismaClient();
 
 export const whisperRouter = t.router({
-  listWhispers: t.procedure
-    .input(z.object({ userId: z.string() }))
-    .query(async ({ input }) => {
-      const whispers = await prisma.whisper.findMany({
-        where: { userId: input.userId },
-        orderBy: { createdAt: "desc" },
-      });
-      // Map to dashboard shape
-      return whispers.map((w) => ({
-        id: w.id,
-        title: w.title,
-        content: w.fullTranscription,
-        preview: w.fullTranscription.slice(0, 80),
-        timestamp: w.createdAt.toISOString(),
-        // duration: ... // If you want to add duration, you can extend the model or calculate from audioTracks
-      }));
-    }),
-  createWhisper: t.procedure
+  listWhispers: protectedProcedure.query(async ({ ctx }) => {
+    const whispers = await prisma.whisper.findMany({
+      where: { userId: ctx.auth.userId },
+      orderBy: { createdAt: "desc" },
+    });
+    // Map to dashboard shape
+    return whispers.map((w) => ({
+      id: w.id,
+      title: w.title,
+      content: w.fullTranscription,
+      preview: w.fullTranscription.slice(0, 80),
+      timestamp: w.createdAt.toISOString(),
+      // duration: ... // If you want to add duration, you can extend the model or calculate from audioTracks
+    }));
+  }),
+  createWhisper: protectedProcedure
     .input(
       z.object({
-        userId: z.string(),
         title: z.string(),
         content: z.string(),
         preview: z.string(),
@@ -35,10 +33,10 @@ export const whisperRouter = t.router({
         duration: z.string().optional(),
       })
     )
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       const whisper = await prisma.whisper.create({
         data: {
-          userId: input.userId,
+          userId: ctx.auth.userId,
           title: input.title,
           fullTranscription: input.content,
           createdAt: new Date(input.timestamp),
@@ -53,9 +51,9 @@ export const whisperRouter = t.router({
         duration: input.duration,
       };
     }),
-  transcribeFromS3: t.procedure
+  transcribeFromS3: protectedProcedure
     .input(z.object({ audioUrl: z.string(), whisperId: z.string().optional() }))
-    .mutation(async ({ input }) => {
+    .mutation(async ({ input, ctx }) => {
       // 1. Call Fal Whisper
       fal.config({ credentials: process.env.FAL_KEY! });
       const result = await fal.subscribe("fal-ai/whisper", {
@@ -97,7 +95,7 @@ export const whisperRouter = t.router({
           data: {
             id: newId,
             title,
-            userId: "anonymous", // or set to null if you update schema
+            userId: ctx.auth.userId,
             fullTranscription: transcription,
             audioTracks: {
               create: [
@@ -112,7 +110,7 @@ export const whisperRouter = t.router({
         return { id: newId };
       }
     }),
-  getWhisperWithTracks: t.procedure
+  getWhisperWithTracks: protectedProcedure
     .input(z.object({ id: z.string() }))
     .query(async ({ input }) => {
       const whisper = await prisma.whisper.findUnique({

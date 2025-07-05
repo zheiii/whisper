@@ -1,16 +1,16 @@
-"use client"
+"use client";
 
-import { LandingPage } from "@/components/landing-page"
+import { LandingPage } from "@/components/landing-page";
 
 export interface Transcription {
-  id: string
-  title: string
-  content: string
-  preview: string
-  timestamp: string
-  duration?: string
+  id: string;
+  title: string;
+  content: string;
+  preview: string;
+  timestamp: string;
+  duration?: string;
 }
 
 export default function Home() {
-  return <LandingPage />
+  return <LandingPage />;
 }

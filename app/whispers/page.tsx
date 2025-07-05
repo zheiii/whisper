@@ -47,12 +47,9 @@ export default function WhispersPage() {
   }, [user, router]);
 
   const { data: transcriptions = [], isLoading } = useQuery(
-    trpc.whisper.listWhispers.queryOptions(
-      { userId: user?.id || "" },
-      {
-        enabled: !!user?.id,
-      }
-    )
+    trpc.whisper.listWhispers.queryOptions(undefined, {
+      enabled: !!user?.id,
+    })
   );
 
   // Placeholder for add (should use mutation in future)
@@ -63,8 +60,6 @@ export default function WhispersPage() {
   if (isLoading) {
     return <Spinner />;
   }
-
-  console.log("transcriptions", transcriptions);
 
   return (
     <Dashboard

@@ -3,7 +3,7 @@
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Link, Search } from "lucide-react";
+import { Search } from "lucide-react";
 import { RecordingModal } from "@/components/recording-modal";
 import type { Transcription } from "@/app/page";
 import { UploadModal } from "./UploadModal";
@@ -28,6 +28,8 @@ export function Dashboard({
           t.content.toLowerCase().includes(searchQuery.toLowerCase())
       )
     : transcriptions;
+
+  console.log("filteredTranscriptions", filteredTranscriptions);
 
   const handleNewWhisper = () => {
     setShowRecordingModal(true);
@@ -74,10 +76,11 @@ export function Dashboard({
           ) : (
             <div className="space-y-4 mx-auto max-w-[455px]">
               {filteredTranscriptions.map((transcription) => (
-                <Link
+                <a
+                  target="_blank"
                   href={`/whispers/${transcription.id}`}
                   key={transcription.id}
-                  className="bg-white rounded-lg p-4 border border-slate-200 hover:border-slate-300 cursor-pointer transition-colors"
+                  className="bg-white rounded-lg p-4 cursor-pointer"
                 >
                   <div className="flex items-start gap-3">
                     <div className="w-2 h-2 bg-slate-400 rounded-full mt-2 flex-shrink-0"></div>
@@ -96,7 +99,7 @@ export function Dashboard({
                       </div>
                     </div>
                   </div>
-                </Link>
+                </a>
               ))}
             </div>
           )}
