@@ -7,6 +7,7 @@ import { Search } from "lucide-react";
 import { RecordingModal } from "@/components/recording-modal";
 import type { Transcription } from "@/app/page";
 import { UploadModal } from "./UploadModal";
+import { formatWhisperTimestamp } from "@/lib/utils";
 
 interface DashboardProps {
   transcriptions: Transcription[];
@@ -74,31 +75,24 @@ export function Dashboard({
               </p>
             </div>
           ) : (
-            <div className="space-y-4 mx-auto max-w-[455px]">
+            <div className="flex flex-col justify-start items-start relative space-y-4 mx-auto max-w-[727px]">
               {filteredTranscriptions.map((transcription) => (
                 <a
                   target="_blank"
                   href={`/whispers/${transcription.id}`}
                   key={transcription.id}
-                  className="bg-white rounded-lg p-4 cursor-pointer"
+                  className="self-stretch flex-grow-0 flex-shrink-0 h-[121px] overflow-hidden group border-t-0 border-r-0 border-b-[0.7px] border-l-0 border-gray-200 md:border-[0.7px] md:border-transparent md:rounded-xl focus-within:bg-gray-50 focus-within:border-[#d1d5dc] hover:bg-gray-50 hover:border-[#d1d5dc] transition-all flex flex-col justify-between px-6 py-4"
+                  tabIndex={0}
                 >
-                  <div className="flex items-start gap-3">
-                    <div className="w-2 h-2 bg-slate-400 rounded-full mt-2 flex-shrink-0"></div>
-                    <div className="flex-1 min-w-0">
-                      <h3 className="font-medium text-slate-900 mb-1">
-                        {transcription.title}
-                      </h3>
-                      <p className="text-sm text-muted-foreground mb-2 line-clamp-2">
-                        {transcription.preview}
-                      </p>
-                      <div className="flex items-center gap-4 text-xs text-muted-foreground">
-                        <span>{transcription.timestamp}</span>
-                        {transcription.duration && (
-                          <span>{transcription.duration}</span>
-                        )}
-                      </div>
-                    </div>
-                  </div>
+                  <p className="text-base font-medium text-left text-[#101828] mb-2">
+                    {transcription.title}
+                  </p>
+                  <p className="text-sm text-left text-[#4a5565] mb-4 line-clamp-2">
+                    {transcription.preview}
+                  </p>
+                  <p className="text-xs text-left text-[#99a1af] mt-auto">
+                    {formatWhisperTimestamp(transcription.timestamp)}
+                  </p>
                 </a>
               ))}
             </div>
