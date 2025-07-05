@@ -3,6 +3,7 @@
 import { useRouter, useParams } from "next/navigation";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
+import { formatWhisperTimestamp } from "@/lib/utils";
 
 export default function TranscriptionPage() {
   const router = useRouter();
@@ -66,7 +67,7 @@ export default function TranscriptionPage() {
               <li key={track.id} className="mb-4">
                 <audio controls src={track.fileUrl} className="w-full mb-1" />
                 <div className="text-xs text-muted-foreground">
-                  {new Date(track.createdAt).toLocaleString()}
+                  {formatWhisperTimestamp(track.createdAt)}
                 </div>
                 <div className="text-sm">{track.partialTranscription}</div>
               </li>
