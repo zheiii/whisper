@@ -13,13 +13,24 @@ import {
   useUser,
 } from "@clerk/nextjs";
 import Link from "next/link";
+
 export function Header() {
   const pathname = usePathname();
   const { user } = useUser();
+  const [mounted, setMounted] = React.useState(false);
+
+  React.useEffect(() => {
+    setMounted(true);
+  }, []);
 
   // /whispers/1234567890
   const isSingleWhisperPage =
     pathname.startsWith("/whispers/") && pathname.length > 11;
+
+  if (!mounted) {
+    // Optionally, you can return a skeleton or null while mounting
+    return null;
+  }
 
   return (
     <header className="flex items-center justify-between p-4 bg-gray-50 border-b border-gray-200">
