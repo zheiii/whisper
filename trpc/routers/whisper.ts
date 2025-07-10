@@ -135,4 +135,26 @@ export const whisperRouter = t.router({
       });
       return { id: updated.id, fullTranscription: updated.fullTranscription };
     }),
+  duplicateWhisper: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      // Find the original whisper with tracks
+      const original = await prisma.whisper.findUnique({
+        where: { id: input.id },
+        include: { audioTracks: true },
+      });
+      if (!original) throw new Error("Whisper not found");
+      // Create a new whisper for the current user, referencing the same audio tracks
+      const newWhisper = await prisma.whisper.create({
+        data: {
+          userId: ctx.auth.userId,
+          title: original.title + " (Copy)",
+          fullTranscription: original.fullTranscription,
+          audioTracks: {
+            connect: original.audioTracks.map((track) => ({ id: track.id })),
+          },
+        },
+      });
+      return { id: newWhisper.id };
+    }),
 });

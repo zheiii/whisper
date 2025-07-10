@@ -24,6 +24,9 @@ export default function TranscriptionPage() {
   const trpcMutation = useMutation(
     trpc.whisper.updateFullTranscription.mutationOptions()
   );
+  const duplicateMutation = useMutation(
+    trpc.whisper.duplicateWhisper.mutationOptions()
+  );
 
   useEffect(() => {
     if (whisper?.fullTranscription) {
@@ -80,20 +83,25 @@ export default function TranscriptionPage() {
       </header>
       <main className="py-8 mx-auto max-w-[688px] w-full">
         <div className="mb-6">
-          <div
-            contentEditable
-            suppressContentEditableWarning
-            className="whitespace-pre-line border border-slate-200 rounded p-2 min-h-[120px] focus:outline-none focus:ring-2 focus:ring-blue-400"
-            onInput={handleTranscriptionInput}
+          <textarea
+            className="whitespace-pre-line border border-slate-200 rounded p-2 min-h-[120px] w-full focus:outline-none focus:ring-2 focus:ring-blue-400 resize-vertical"
+            value={editableTranscription}
+            onChange={(e) => {
+              const value = e.target.value;
+              setEditableTranscription(value);
+              if (debounceTimeout.current)
+                clearTimeout(debounceTimeout.current);
+              debounceTimeout.current = setTimeout(() => {
+                trpcMutation.mutate({ id, fullTranscription: value });
+              }, 500);
+            }}
             spellCheck={true}
             aria-label="Edit transcription"
             style={{
               background:
                 trpcMutation.status === "pending" ? "#f3f4f6" : undefined,
             }}
-          >
-            {editableTranscription}
-          </div>
+          />
           {trpcMutation.status === "pending" && (
             <div className="text-xs text-blue-500 mt-1">Saving...</div>
           )}
@@ -123,9 +131,25 @@ export default function TranscriptionPage() {
             <img src="/microphoneFull.svg" className="size-5 min-w-5 min-h-5" />
             <span>Continue</span>
           </button>
-          <button className="flex-1 py-2 rounded-lg border border-slate-200 bg-white text-[#364153] font-medium flex items-center justify-center gap-2">
+          <button
+            className="flex-1 py-2 cursor-pointer rounded-lg border border-slate-200 bg-white text-[#364153] font-medium flex items-center justify-center gap-2"
+            onClick={async () => {
+              if (duplicateMutation.status === "pending") return;
+              duplicateMutation.mutate(
+                { id },
+                {
+                  onSuccess: (data) => {
+                    if (data?.id) router.push(`/whispers/${data.id}`);
+                  },
+                }
+              );
+            }}
+            disabled={duplicateMutation.status === "pending"}
+          >
             <img src="/copy.svg" className="size-5 min-w-5 min-h-5" />
-            <span>Copy</span>
+            <span>
+              {duplicateMutation.status === "pending" ? "Copying..." : "Copy"}
+            </span>
           </button>
           <Link
             href="/whispers"
