@@ -120,4 +120,19 @@ export const whisperRouter = t.router({
       if (!whisper) throw new Error("Whisper not found");
       return whisper;
     }),
+  updateFullTranscription: protectedProcedure
+    .input(z.object({ id: z.string(), fullTranscription: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      // Only allow the owner to update
+      const whisper = await prisma.whisper.findUnique({
+        where: { id: input.id },
+      });
+      if (!whisper) throw new Error("Whisper not found");
+      if (whisper.userId !== ctx.auth.userId) throw new Error("Unauthorized");
+      const updated = await prisma.whisper.update({
+        where: { id: input.id },
+        data: { fullTranscription: input.fullTranscription },
+      });
+      return { id: updated.id, fullTranscription: updated.fullTranscription };
+    }),
 });
