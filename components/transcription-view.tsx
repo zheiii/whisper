@@ -1,62 +1,76 @@
-"use client"
+"use client";
 
-import { useState } from "react"
-import { Button } from "@/components/ui/button"
-import { Textarea } from "@/components/ui/textarea"
-import { Input } from "@/components/ui/input"
-import { ArrowLeft, Edit3, Save, Trash2, Plus, Mic } from "lucide-react"
-import { RecordingModal } from "@/components/recording-modal"
-import type { Transcription } from "@/app/page"
-import { useRouter } from "next/navigation"
+import { useState } from "react";
+import { Button } from "@/components/ui/button";
+import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
+import { ArrowLeft, Edit3, Save, Trash2, Plus, Mic } from "lucide-react";
+import { RecordingModal } from "@/components/RecordingModal";
+import type { Transcription } from "@/app/page";
+import { useRouter } from "next/navigation";
 
 interface TranscriptionViewProps {
-  transcription: Transcription
-  onUpdate: (transcription: Transcription) => void
-  onDelete: (id: string) => void
-  onBack: () => void
+  transcription: Transcription;
+  onUpdate: (transcription: Transcription) => void;
+  onDelete: (id: string) => void;
+  onBack: () => void;
 }
 
-export function TranscriptionView({ transcription, onUpdate, onDelete, onBack }: TranscriptionViewProps) {
-  const [isEditing, setIsEditing] = useState(false)
-  const [editedTitle, setEditedTitle] = useState(transcription.title)
-  const [editedContent, setEditedContent] = useState(transcription.content)
-  const [showAddModal, setShowAddModal] = useState(false)
-  const router = useRouter()
+export function TranscriptionView({
+  transcription,
+  onUpdate,
+  onDelete,
+  onBack,
+}: TranscriptionViewProps) {
+  const [isEditing, setIsEditing] = useState(false);
+  const [editedTitle, setEditedTitle] = useState(transcription.title);
+  const [editedContent, setEditedContent] = useState(transcription.content);
+  const [showAddModal, setShowAddModal] = useState(false);
+  const router = useRouter();
 
   const handleSave = () => {
-    const preview = editedContent.length > 100 ? editedContent.substring(0, 100) + "..." : editedContent
+    const preview =
+      editedContent.length > 100
+        ? editedContent.substring(0, 100) + "..."
+        : editedContent;
 
     onUpdate({
       ...transcription,
       title: editedTitle,
       content: editedContent,
       preview,
-    })
-    setIsEditing(false)
-  }
+    });
+    setIsEditing(false);
+  };
 
   const handleCancel = () => {
-    setEditedTitle(transcription.title)
-    setEditedContent(transcription.content)
-    setIsEditing(false)
-  }
+    setEditedTitle(transcription.title);
+    setEditedContent(transcription.content);
+    setIsEditing(false);
+  };
 
   const handleAddExtra = (newContent: { title: string; content: string }) => {
-    const updatedContent = transcription.content + "\n\n--- Additional Recording ---\n\n" + newContent.content
-    const preview = updatedContent.length > 100 ? updatedContent.substring(0, 100) + "..." : updatedContent
+    const updatedContent =
+      transcription.content +
+      "\n\n--- Additional Recording ---\n\n" +
+      newContent.content;
+    const preview =
+      updatedContent.length > 100
+        ? updatedContent.substring(0, 100) + "..."
+        : updatedContent;
 
     onUpdate({
       ...transcription,
       content: updatedContent,
       preview,
-    })
-  }
+    });
+  };
 
   const handleDelete = () => {
     if (confirm("Are you sure you want to delete this transcription?")) {
-      onDelete(transcription.id)
+      onDelete(transcription.id);
     }
-  }
+  };
 
   return (
     <div className="min-h-screen bg-slate-50">
@@ -67,7 +81,10 @@ export function TranscriptionView({ transcription, onUpdate, onDelete, onBack }:
             <Button variant="ghost" size="sm" onClick={onBack}>
               <ArrowLeft className="w-4 h-4" />
             </Button>
-            <div className="flex items-center gap-2 cursor-pointer" onClick={() => router.push("/")}>
+            <div
+              className="flex items-center gap-2 cursor-pointer"
+              onClick={() => router.push("/")}
+            >
               <Mic className="w-6 h-6" />
               <span className="text-xl font-semibold">Whisper</span>
             </div>
@@ -85,11 +102,19 @@ export function TranscriptionView({ transcription, onUpdate, onDelete, onBack }:
               </>
             ) : (
               <>
-                <Button variant="outline" size="sm" onClick={() => setShowAddModal(true)}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setShowAddModal(true)}
+                >
                   <Plus className="w-4 h-4 mr-2" />
                   Add Extra
                 </Button>
-                <Button variant="outline" size="sm" onClick={() => setIsEditing(true)}>
+                <Button
+                  variant="outline"
+                  size="sm"
+                  onClick={() => setIsEditing(true)}
+                >
                   <Edit3 className="w-4 h-4 mr-2" />
                   Edit
                 </Button>
@@ -133,7 +158,9 @@ export function TranscriptionView({ transcription, onUpdate, onDelete, onBack }:
                 placeholder="Your transcription content..."
               />
             ) : (
-              <div className="text-base leading-relaxed whitespace-pre-wrap">{transcription.content}</div>
+              <div className="text-base leading-relaxed whitespace-pre-wrap">
+                {transcription.content}
+              </div>
             )}
           </div>
         </div>
@@ -144,12 +171,12 @@ export function TranscriptionView({ transcription, onUpdate, onDelete, onBack }:
         <RecordingModal
           onClose={() => setShowAddModal(false)}
           onSave={(newContent) => {
-            handleAddExtra(newContent)
-            setShowAddModal(false)
+            handleAddExtra(newContent);
+            setShowAddModal(false);
           }}
           title="Add Extra Recording"
         />
       )}
     </div>
-  )
+  );
 }

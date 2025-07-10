@@ -13,8 +13,12 @@ import { useS3Upload } from "next-s3-upload";
 import { useRouter } from "next/navigation";
 import { useTRPC } from "@/trpc/client";
 import { useMutation } from "@tanstack/react-query";
+import { RecordingBasics } from "./RecordingBasics";
 
 export function UploadModal({ onClose }: { onClose: () => void }) {
+  const [noteType, setNoteType] = useState("quick-note");
+  const [language, setLanguage] = useState("en-US");
+
   const [isDragActive, setIsDragActive] = useState(false);
   const { uploadToS3 } = useS3Upload();
   const router = useRouter();
@@ -55,6 +59,12 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
         <DialogHeader className="p-0">
           <DialogTitle className="sr-only">Upload Voice Audio</DialogTitle>
         </DialogHeader>
+        <RecordingBasics
+          noteType={noteType}
+          setNoteType={setNoteType}
+          language={language}
+          setLanguage={setLanguage}
+        />
         <Dropzone
           multiple={false}
           accept={{

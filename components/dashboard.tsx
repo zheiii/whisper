@@ -4,7 +4,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
-import { RecordingModal } from "@/components/recording-modal";
+import { RecordingModal } from "@/components/RecordingModal";
 import type { Transcription } from "@/app/page";
 import { UploadModal } from "./UploadModal";
 import { formatWhisperTimestamp } from "@/lib/utils";

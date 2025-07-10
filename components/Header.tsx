@@ -1,7 +1,7 @@
 "use client";
 
 import { Mic } from "lucide-react";
-import { usePathname, useRouter } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import React from "react";
 import { Button } from "./ui/button";
 import {
@@ -13,6 +13,7 @@ import {
   useUser,
 } from "@clerk/nextjs";
 import Link from "next/link";
+import { ModalCustomApiKey } from "./ModalCustomApiKey";
 
 export function Header() {
   const pathname = usePathname();
@@ -71,12 +72,7 @@ export function Header() {
             <img src="/spark.svg" className="size-4 min-w-4" />
             <p className="text-sm font-medium text-left text-[#1e2939]">12</p>
           </Button>
-          <Button
-            variant="ghost"
-            className="p-[7px] size-[30px] min-w-[30px] min-h-[30px] rounded-lg border border-gray-200 bg-white hover:bg-gray-50"
-          >
-            <img src="/key.svg" className="min-w-4 min-h-4 size-4" />
-          </Button>
+          <KeyButton />
           <UserButton
             appearance={{
               elements: {
@@ -88,6 +84,30 @@ export function Header() {
           />
         </SignedIn>
       </div>
+      <ModalCustomApiKey />
     </header>
+  );
+}
+
+function KeyButton() {
+  const router = useRouter();
+  const pathname = usePathname();
+  const searchParams = useSearchParams();
+
+  const handleClick = () => {
+    const params = new URLSearchParams(searchParams.toString());
+    params.set("customKey", "true");
+    const newUrl = params.toString() ? `${pathname}?${params}` : pathname;
+    router.push(newUrl);
+  };
+
+  return (
+    <Button
+      variant="ghost"
+      className="p-[7px] size-[30px] min-w-[30px] min-h-[30px] rounded-lg border border-gray-200 bg-white hover:bg-gray-50"
+      onClick={handleClick}
+    >
+      <img src="/key.svg" className="min-w-4 min-h-4 size-4" />
+    </Button>
   );
 }
