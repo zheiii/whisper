@@ -8,6 +8,7 @@ import { RecordingModal } from "@/components/RecordingModal";
 import type { Transcription } from "@/app/page";
 import { UploadModal } from "./UploadModal";
 import { formatWhisperTimestamp } from "@/lib/utils";
+import Link from "next/link";
 
 interface DashboardProps {
   transcriptions: Transcription[];
@@ -77,8 +78,7 @@ export function Dashboard({
           ) : (
             <div className="flex flex-col justify-start items-start relative space-y-4 mx-auto max-w-[727px]">
               {filteredTranscriptions.map((transcription) => (
-                <a
-                  target="_blank"
+                <Link
                   href={`/whispers/${transcription.id}`}
                   key={transcription.id}
                   className="self-stretch flex-grow-0 flex-shrink-0 h-[121px] overflow-hidden group border-t-0 border-r-0 border-b-[0.7px] border-l-0 border-gray-200 md:border-[0.7px] md:border-transparent md:rounded-xl focus-within:bg-gray-50 focus-within:border-[#d1d5dc] hover:bg-gray-50 hover:border-[#d1d5dc] transition-all flex flex-col justify-between px-6 py-4"
@@ -93,7 +93,7 @@ export function Dashboard({
                   <p className="text-xs text-left text-[#99a1af] mt-auto">
                     {formatWhisperTimestamp(transcription.timestamp)}
                   </p>
-                </a>
+                </Link>
               ))}
             </div>
           )}
