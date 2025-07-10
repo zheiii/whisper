@@ -107,7 +107,16 @@ export const ModalCustomApiKey = () => {
         <div className="flex flex-col items-center w-full px-5 py-6 gap-3">
           <div className="w-full flex flex-col gap-2 relative">
             <p className="text-base font-medium text-[#101828] text-left">
-              Add your <span className="underline">Together AI</span> API key:
+              Add your{" "}
+              <a
+                href="https://togetherai.link/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="underline"
+              >
+                Together AI
+              </a>{" "}
+              API key:
             </p>
             <div className="relative w-full">
               <input
@@ -131,9 +140,14 @@ export const ModalCustomApiKey = () => {
           <ul className="w-full flex flex-col gap-2 mt-2 list-disc px-5">
             <li className="text-sm text-[#4a5565] text-left">
               Visit{" "}
-              <span className="font-medium text-[#101828] underline">
+              <a
+                href="https://togetherai.link/"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="font-medium text-[#101828] underline"
+              >
                 together.ai
-              </span>{" "}
+              </a>{" "}
               and sign up for free
             </li>
             <li className="text-sm text-[#4a5565] text-left">
@@ -141,9 +155,11 @@ export const ModalCustomApiKey = () => {
             </li>
           </ul>
           <div className="w-full flex flex-col gap-3 mt-4">
-            <button
+            <a
+              href="https://togetherai.link/"
+              target="_blank"
+              rel="noopener noreferrer"
               className="flex justify-center items-center w-full h-10 gap-2 px-[33px] py-2.5 rounded-lg bg-[#101828] cursor-pointer"
-              type="button"
             >
               <span className="text-base font-semibold text-white">
                 Get your API key
@@ -162,7 +178,7 @@ export const ModalCustomApiKey = () => {
                   fill="white"
                 />
               </svg>
-            </button>
+            </a>
             <button
               className="flex justify-center items-center w-full h-10 gap-2 px-[33px] py-2.5 rounded-lg border border-[#d1d5dc] cursor-pointer"
               type="button"
