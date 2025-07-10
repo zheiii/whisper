@@ -14,11 +14,22 @@ import {
 } from "@clerk/nextjs";
 import Link from "next/link";
 import { ModalCustomApiKey } from "./ModalCustomApiKey";
+import { useTRPC } from "@/trpc/client";
+import { RecordingMinutesLeft } from "./RecordingMinutesLeft";
+import { useQuery } from "@tanstack/react-query";
+import { toast } from "sonner";
 
 export function Header() {
   const pathname = usePathname();
   const { user } = useUser();
   const [mounted, setMounted] = React.useState(false);
+  const trpc = useTRPC();
+
+  const { data: transformationsData, isLoading: isTransformationsLoading } =
+    useQuery({
+      ...trpc.limit.getTransformationsLeft.queryOptions(),
+      enabled: !!user,
+    });
 
   React.useEffect(() => {
     setMounted(true);
@@ -68,9 +79,24 @@ export function Header() {
           </SignUpButton>
         </SignedOut>
         <SignedIn>
-          <Button className="w-[51px] h-[30px] relative rounded-lg bg-white hover:bg-gray-50 border-[0.5px] border-gray-200">
+          <Button
+            className="w-[51px] h-[30px] relative rounded-lg bg-white hover:bg-gray-50 border-[0.5px] border-gray-200"
+            onClick={() => {
+              if (!isTransformationsLoading) {
+                toast(
+                  `You got ${
+                    transformationsData?.remaining ?? 0
+                  } transformations left for your whispers`
+                );
+              }
+            }}
+          >
             <img src="/spark.svg" className="size-4 min-w-4" />
-            <p className="text-sm font-medium text-left text-[#1e2939]">12</p>
+            <p className="text-sm font-medium text-left text-[#1e2939]">
+              {isTransformationsLoading
+                ? "..."
+                : transformationsData?.remaining ?? 0}
+            </p>
           </Button>
           <KeyButton />
           <UserButton

@@ -41,9 +41,9 @@ export default function TranscriptionPage() {
   }
 
   return (
-    <div className="min-h-screen bg-slate-50">
-      <header className="bg-white border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-        <div>
+    <div className="min-h-screen bg-white">
+      <header className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
+        <div className="mx-auto max-w-[688px] w-full">
           <h1 className="text-xl font-semibold">{whisper.title}</h1>
           <div className="text-xs text-muted-foreground">
             Last edited: {new Date(whisper.createdAt).toLocaleDateString()} –{" "}
@@ -55,13 +55,12 @@ export default function TranscriptionPage() {
         </div>
         {/* Add your transcript dropdown/actions here */}
       </header>
-      <main className="px-6 py-8">
+      <main className="py-8 mx-auto max-w-[688px] w-full">
         <div className="mb-6">
-          <h2 className="text-lg font-medium mb-2">Transcript</h2>
           <p className="whitespace-pre-line">{whisper.fullTranscription}</p>
         </div>
         <div>
-          <h2 className="text-lg font-medium mb-2">Audio Tracks</h2>
+          <h2 className="text-lg font-medium mb-2">Audio Tracks used RAW</h2>
           <ul>
             {whisper.audioTracks.map((track) => (
               <li key={track.id} className="mb-4">

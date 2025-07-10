@@ -14,6 +14,8 @@ import { useRouter } from "next/navigation";
 import { useTRPC } from "@/trpc/client";
 import { useMutation } from "@tanstack/react-query";
 import { RecordingBasics } from "./RecordingBasics";
+import { RecordingMinutesLeft } from "./RecordingMinutesLeft";
+import { useQuery } from "@tanstack/react-query";
 
 export function UploadModal({ onClose }: { onClose: () => void }) {
   const [noteType, setNoteType] = useState("quick-note");
@@ -25,6 +27,9 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
   const trpc = useTRPC();
   const transcribeMutation = useMutation(
     trpc.whisper.transcribeFromS3.mutationOptions()
+  );
+  const { data: minutesData, isLoading: isMinutesLoading } = useQuery(
+    trpc.limit.getMinutesLeft.queryOptions()
   );
 
   const handleDrop = useCallback(
@@ -90,29 +95,21 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
           {({ getRootProps, getInputProps }) => (
             <div
               {...getRootProps()}
-              className="flex flex-col justify-start items-start w-[392px] h-[347px] relative overflow-hidden rounded-2xl bg-white border border-gray-200"
-              style={{
-                border: isDragActive
-                  ? "2px solid #2563eb"
-                  : "1px solid #e5e7eb",
-                boxShadow: isDragActive ? "0 0 0 4px #93c5fd" : undefined,
-                transition: "border 0.2s, box-shadow 0.2s",
-                cursor: "pointer",
-              }}
+              className="flex flex-col justify-start items-start relative overflow-hidden bg-white cursor-pointer"
             >
               <input {...getInputProps()} />
-              <div className="self-stretch flex-grow-0 flex-shrink-0 h-[307px] relative bg-white border border-gray-200">
-                <div className="w-[352px] h-[267px] absolute left-5 top-5 overflow-hidden rounded-xl bg-gray-100 border-2 border-[#d1d5dc] border-dashed">
-                  <div className="flex justify-center items-center h-9 absolute left-[75px] top-[102px] overflow-hidden gap-2.5 px-3 py-2 rounded-lg bg-[#101828]">
+              <div className="relative bg-white p-5 w-full">
+                <div className="relative overflow-hidden rounded-xl bg-gray-100 border-2 border-[#d1d5dc] border-dashed min-h-[86px] flex justify-center items-center flex-col gap-1">
+                  <div className="flex justify-center items-center relative gap-2.5 px-3 py-2 rounded-lg bg-[#101828]">
                     <img
                       src="/uploadWhite.svg"
                       className="size-[18px] min-w-[18px]"
                     />
-                    <p className="flex-grow-0 flex-shrink-0 text-base font-semibold text-left text-white">
+                    <p className="text-base font-semibold text-left text-white">
                       Upload a Recording
                     </p>
                   </div>
-                  <p className="absolute left-[113px] top-[150px] text-xs text-center text-[#4a5565]">
+                  <p className="text-xs text-center text-[#4a5565]">
                     Or drag‑and‑drop here
                   </p>
                   {isDragActive && (
@@ -124,15 +121,14 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
                   )}
                 </div>
               </div>
-              <div className="self-stretch flex-grow-0 flex-shrink-0 h-10 relative overflow-hidden">
-                <p className="absolute left-5 top-3 text-sm text-left">
-                  <span className="text-sm font-light text-left text-[#4a5565]">
-                    Recordings left:{" "}
-                  </span>
-                  <span className="text-sm font-medium text-left text-[#101828]">
-                    5
-                  </span>
-                </p>
+              <div className="relative overflow-hidden px-5 py-3 w-full border-t border-gray-200">
+                {isMinutesLoading ? (
+                  <span className="text-sm text-[#4a5565]">Loading...</span>
+                ) : (
+                  <RecordingMinutesLeft
+                    minutesLeft={minutesData?.remaining ?? 0}
+                  />
+                )}
               </div>
             </div>
           )}

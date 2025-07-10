@@ -17,6 +17,9 @@ import {
 } from "@/components/ui/dialog";
 import { cn, MAIN_LANGUAGES } from "@/lib/utils";
 import { RecordingBasics } from "./RecordingBasics";
+import { useTRPC } from "@/trpc/client";
+import { RecordingMinutesLeft } from "./RecordingMinutesLeft";
+import { useQuery } from "@tanstack/react-query";
 
 interface RecordingModalProps {
   onClose: () => void;
@@ -141,6 +144,11 @@ export function RecordingModal({
   const [micPermission, setMicPermission] = useState<
     "granted" | "denied" | "prompt" | null
   >(null);
+
+  const trpc = useTRPC();
+  const { data: minutesData, isLoading: isMinutesLoading } = useQuery(
+    trpc.limit.getMinutesLeft.queryOptions()
+  );
 
   // Check microphone permission on mount
   useEffect(() => {
@@ -314,12 +322,13 @@ export function RecordingModal({
 
           {!isRecording && (
             <div className="w-full flex flex-col py-3 px-5 border-t border-gray-200">
-              <div className="text-sm flex flex-row items-center gap-1">
-                <span className="font-light text-[#4a5565]">
-                  Recordings left:
-                </span>
-                <span className="text-[#101828] font-medium">5</span>
-              </div>
+              {isMinutesLoading ? (
+                <span className="text-sm text-[#4a5565]">Loading...</span>
+              ) : (
+                <RecordingMinutesLeft
+                  minutesLeft={minutesData?.remaining ?? 0}
+                />
+              )}
             </div>
           )}
         </div>
