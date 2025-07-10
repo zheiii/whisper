@@ -7,7 +7,9 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
-import { useCallback } from "react";
+import { useCallback, useState, useRef, useEffect } from "react";
+import { useTogetherApiKey } from "./TogetherApiKeyProvider";
+import { toast } from "sonner";
 
 export const ModalCustomApiKey = () => {
   const searchParams = useSearchParams();
@@ -16,6 +18,15 @@ export const ModalCustomApiKey = () => {
 
   const isOpen = searchParams.get("customKey") === "true";
 
+  const { apiKey, setApiKey } = useTogetherApiKey();
+  const [togetherApiKey, setTogetherApiKey] = useState("");
+  const [isValidating, setIsValidating] = useState(false);
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    setTogetherApiKey(apiKey || "");
+  }, [apiKey]);
+
   // Remove customKey from the URL
   const handleClose = useCallback(() => {
     const params = new URLSearchParams(searchParams.toString());
@@ -23,6 +34,57 @@ export const ModalCustomApiKey = () => {
     const newUrl = params.toString() ? `${pathname}?${params}` : pathname;
     router.push(newUrl);
   }, [router, pathname, searchParams]);
+
+  const validateAndSaveApiKey = async (apiKey: string) => {
+    setIsValidating(true);
+    try {
+      const response = await fetch("/api/validate-key", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({ apiKey }),
+      });
+
+      if (response.ok) {
+        setApiKey(apiKey);
+        toast.success("API key validated and saved!");
+        return true;
+      } else {
+        const errorData = await response.json();
+        const errorMessage =
+          errorData.message ||
+          `API key validation failed with status: ${response.status}`;
+        toast.error(errorMessage);
+
+        if (errorMessage.startsWith("Invalid API key")) {
+          setApiKey("");
+          setTogetherApiKey("");
+        }
+        return false;
+      }
+    } finally {
+      setIsValidating(false);
+    }
+  };
+
+  const handleApiKeyChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const value = e.target.value;
+    setTogetherApiKey(value);
+
+    if (value.length === 0) {
+      setApiKey("");
+      return;
+    }
+
+    if (debounceTimeoutRef.current) {
+      clearTimeout(debounceTimeoutRef.current);
+    }
+
+    debounceTimeoutRef.current = setTimeout(async () => {
+      await validateAndSaveApiKey(value);
+    }, 500);
+  };
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -43,14 +105,28 @@ export const ModalCustomApiKey = () => {
           </div>
         </DialogHeader>
         <div className="flex flex-col items-center w-full px-5 py-6 gap-3">
-          <div className="w-full flex flex-col gap-2">
+          <div className="w-full flex flex-col gap-2 relative">
             <p className="text-base font-medium text-[#101828] text-left">
               Add your <span className="underline">Together AI</span> API key:
             </p>
-            <input
-              className="w-full h-9 flex items-center overflow-hidden rounded-lg bg-white border border-[#99a1af] px-3 text-base placeholder:text-[#99a1af] text-[#4a5565]"
-              placeholder="API Key"
-            />
+            <div className="relative w-full">
+              <input
+                type="password"
+                className="w-full h-9 flex items-center overflow-hidden rounded-lg bg-white border border-[#99a1af] px-3 text-base placeholder:text-[#99a1af] text-[#4a5565] pr-10"
+                placeholder="API Key"
+                value={togetherApiKey}
+                onChange={handleApiKeyChange}
+                autoComplete="off"
+              />
+              {isValidating && (
+                <img
+                  src="/loading.svg"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 animate-spin"
+                  alt="Validating API key..."
+                  aria-busy="true"
+                />
+              )}
+            </div>
           </div>
           <ul className="w-full flex flex-col gap-2 mt-2 list-disc px-5">
             <li className="text-sm text-[#4a5565] text-left">

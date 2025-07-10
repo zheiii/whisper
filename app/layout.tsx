@@ -5,6 +5,7 @@ import "./globals.css";
 import { Header } from "@/components/Header";
 import { Toaster } from "@/components/ui/sonner";
 import { TRPCReactProvider } from "@/trpc/client";
+import { TogetherApiKeyProvider } from "@/components/TogetherApiKeyProvider";
 
 const raleway = Raleway({
   variable: "--font-raleway",
@@ -30,15 +31,17 @@ export default function RootLayout({
   return (
     <ClerkProvider>
       <TRPCReactProvider>
-        <html lang="en">
-          <body className={`${raleway.variable} antialiased`}>
-            <div className="min-h-screen bg-white">
-              <Header />
-              {children}
-              <Toaster richColors />
-            </div>
-          </body>
-        </html>
+        <TogetherApiKeyProvider>
+          <html lang="en">
+            <body className={`${raleway.variable} antialiased`}>
+              <div className="min-h-screen bg-white">
+                <Header />
+                {children}
+                <Toaster richColors />
+              </div>
+            </body>
+          </html>
+        </TogetherApiKeyProvider>
       </TRPCReactProvider>
     </ClerkProvider>
   );
