@@ -31,8 +31,6 @@ export function Dashboard({
       )
     : transcriptions;
 
-  console.log("filteredTranscriptions", filteredTranscriptions);
-
   const handleNewWhisper = () => {
     setShowRecordingModal(true);
   };
