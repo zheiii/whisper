@@ -2,18 +2,15 @@ import TranscriptionPageClient from "./TranscriptionPageClient";
 import { Metadata } from "next";
 import { PrismaClient } from "@/lib/generated/prisma";
 
-type PageProps = {
-  params: { id: string };
-  searchParams?: { [key: string]: string | string[] | undefined };
-};
-
-export async function generateMetadata(
-  props: Promise<PageProps>
-): Promise<Metadata> {
-  const { params } = await props;
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}): Promise<Metadata> {
+  const { id } = await params;
   const prisma = new PrismaClient();
   const whisper = await prisma.whisper.findUnique({
-    where: { id: params.id },
+    where: { id },
     select: { title: true, fullTranscription: true },
   });
   await prisma.$disconnect();
