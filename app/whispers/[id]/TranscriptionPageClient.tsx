@@ -19,10 +19,13 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
   } = useQuery(trpc.whisper.getWhisperWithTracks.queryOptions({ id }));
 
   const [editableTranscription, setEditableTranscription] = useState("");
+  const [editableTitle, setEditableTitle] = useState("");
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
+  const titleDebounceTimeout = useRef<NodeJS.Timeout | null>(null);
   const trpcMutation = useMutation(
     trpc.whisper.updateFullTranscription.mutationOptions()
   );
+  const titleMutation = useMutation(trpc.whisper.updateTitle.mutationOptions());
   const duplicateMutation = useMutation(
     trpc.whisper.duplicateWhisper.mutationOptions()
   );
@@ -31,7 +34,10 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
     if (whisper?.fullTranscription) {
       setEditableTranscription(whisper.fullTranscription);
     }
-  }, [whisper?.fullTranscription]);
+    if (whisper?.title) {
+      setEditableTitle(whisper.title);
+    }
+  }, [whisper?.fullTranscription, whisper?.title]);
 
   if (isLoading) {
     return (
@@ -60,7 +66,28 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
     <div className="min-h-screen bg-white">
       <header className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
         <div className="mx-auto max-w-[688px] w-full">
-          <h1 className="text-xl font-semibold">{whisper.title}</h1>
+          <input
+            className="text-xl font-semibold bg-transparent border-none outline-none w-full"
+            value={editableTitle}
+            onChange={(e) => {
+              const value = e.target.value;
+              setEditableTitle(value);
+              if (titleDebounceTimeout.current)
+                clearTimeout(titleDebounceTimeout.current);
+              titleDebounceTimeout.current = setTimeout(() => {
+                titleMutation.mutate({ id, title: value });
+              }, 500);
+            }}
+            aria-label="Edit title"
+            spellCheck={true}
+            style={{
+              background:
+                titleMutation.status === "pending" ? "#f3f4f6" : undefined,
+            }}
+          />
+          {titleMutation.status === "pending" && (
+            <div className="text-xs text-blue-500 mt-1">Saving...</div>
+          )}
           <div className="text-xs text-muted-foreground">
             Last edited: {new Date(whisper.createdAt).toLocaleDateString()} –{" "}
             {new Date(whisper.createdAt).toLocaleTimeString([], {

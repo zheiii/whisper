@@ -135,6 +135,21 @@ export const whisperRouter = t.router({
       });
       return { id: updated.id, fullTranscription: updated.fullTranscription };
     }),
+  updateTitle: protectedProcedure
+    .input(z.object({ id: z.string(), title: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      // Only allow the owner to update
+      const whisper = await prisma.whisper.findUnique({
+        where: { id: input.id },
+      });
+      if (!whisper) throw new Error("Whisper not found");
+      if (whisper.userId !== ctx.auth.userId) throw new Error("Unauthorized");
+      const updated = await prisma.whisper.update({
+        where: { id: input.id },
+        data: { title: input.title },
+      });
+      return { id: updated.id, title: updated.title };
+    }),
   duplicateWhisper: protectedProcedure
     .input(z.object({ id: z.string() }))
     .mutation(async ({ input, ctx }) => {
