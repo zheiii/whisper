@@ -13,14 +13,10 @@ const redis =
 const isLocal = process.env.NODE_ENV !== "production";
 
 // Limits
-const MINUTES_LIMIT_DEFAULT = 30;
-const MINUTES_LIMIT_BYOK = 90;
+const MINUTES_LIMIT_DEFAULT = 120;
 const TRANSFORM_LIMIT_DEFAULT = 10;
-const TRANSFORM_LIMIT_BYOK = 30;
 const WINDOW = "1440 m"; // 1 day
 const WINDOW_SECONDS = 60 * 60 * 24; // 1 day in seconds
-
-const BYOK_PREFIX = "byok-";
 
 // Transformations per day limiters
 const transformLimiterDefault =
@@ -28,15 +24,6 @@ const transformLimiterDefault =
     ? new Ratelimit({
         redis: redis,
         limiter: Ratelimit.fixedWindow(TRANSFORM_LIMIT_DEFAULT, WINDOW),
-        analytics: true,
-      })
-    : undefined;
-
-const transformLimiterByok =
-  !isLocal && redis
-    ? new Ratelimit({
-        redis: redis,
-        limiter: Ratelimit.fixedWindow(TRANSFORM_LIMIT_BYOK, WINDOW),
         analytics: true,
       })
     : undefined;
@@ -49,8 +36,8 @@ const fallbackMinutes = {
 };
 const fallbackMinutesByok = {
   success: true,
-  remaining: MINUTES_LIMIT_BYOK,
-  limit: MINUTES_LIMIT_BYOK,
+  remaining: Infinity,
+  limit: Infinity,
   reset: null,
 };
 const fallbackTransform = {
@@ -61,8 +48,8 @@ const fallbackTransform = {
 };
 const fallbackTransformByok = {
   success: true,
-  remaining: TRANSFORM_LIMIT_BYOK,
-  limit: TRANSFORM_LIMIT_BYOK,
+  remaining: Infinity,
+  limit: Infinity,
   reset: null,
 };
 
@@ -81,15 +68,6 @@ async function getUserEmail(clerkUserId?: string) {
   }
 }
 
-function getMinutesKey(clerkUserId: string, isBringingKey?: boolean) {
-  const prefix = isBringingKey ? BYOK_PREFIX : "";
-  const today = new Date();
-  const y = today.getUTCFullYear();
-  const m = today.getUTCMonth() + 1;
-  const d = today.getUTCDate();
-  return `minutes:${prefix}${clerkUserId}:${y}-${m}-${d}`;
-}
-
 export async function limitMinutes({
   clerkUserId,
   isBringingKey,
@@ -100,14 +78,17 @@ export async function limitMinutes({
   minutes: number;
 }) {
   const email = await getUserEmail(clerkUserId);
+  if (isBringingKey) {
+    return fallbackMinutesByok;
+  }
   if (isTogetherUser(email)) {
-    return isBringingKey ? fallbackMinutesByok : fallbackMinutes;
+    return fallbackMinutes;
   }
   if (!clerkUserId || !redis) {
-    return isBringingKey ? fallbackMinutesByok : fallbackMinutes;
+    return fallbackMinutes;
   }
-  const limit = isBringingKey ? MINUTES_LIMIT_BYOK : MINUTES_LIMIT_DEFAULT;
-  const key = getMinutesKey(clerkUserId, isBringingKey);
+  const limit = MINUTES_LIMIT_DEFAULT;
+  const key = clerkUserId;
   // Atomically increment and set expiry if new
   const current = await redis.eval(
     [
@@ -135,14 +116,17 @@ export async function getMinutes({
   isBringingKey?: boolean;
 }) {
   const email = await getUserEmail(clerkUserId);
+  if (isBringingKey) {
+    return fallbackMinutesByok;
+  }
   if (isTogetherUser(email)) {
-    return isBringingKey ? fallbackMinutesByok : fallbackMinutes;
+    return fallbackMinutes;
   }
   if (!clerkUserId || !redis) {
-    return isBringingKey ? fallbackMinutesByok : fallbackMinutes;
+    return fallbackMinutes;
   }
-  const limit = isBringingKey ? MINUTES_LIMIT_BYOK : MINUTES_LIMIT_DEFAULT;
-  const key = getMinutesKey(clerkUserId, isBringingKey);
+  const limit = MINUTES_LIMIT_DEFAULT;
+  const key = clerkUserId;
   const current = Number((await redis.get(key)) || 0);
   const remaining = Math.max(0, limit - current);
   return {
@@ -161,19 +145,20 @@ export async function limitTransformations({
   isBringingKey?: boolean;
 }) {
   const email = await getUserEmail(clerkUserId);
+  if (isBringingKey) {
+    return fallbackTransformByok;
+  }
   if (isTogetherUser(email)) {
-    return isBringingKey ? fallbackTransformByok : fallbackTransform;
+    return fallbackTransform;
   }
   if (!clerkUserId) {
-    return isBringingKey ? fallbackTransformByok : fallbackTransform;
+    return fallbackTransform;
   }
-  const limiter = isBringingKey
-    ? transformLimiterByok
-    : transformLimiterDefault;
+  const limiter = transformLimiterDefault;
   if (!limiter) {
-    return isBringingKey ? fallbackTransformByok : fallbackTransform;
+    return fallbackTransform;
   }
-  const key = (isBringingKey ? BYOK_PREFIX : "") + clerkUserId;
+  const key = clerkUserId;
   const result = await limiter.limit(key);
   return {
     success: result.success,
@@ -191,23 +176,24 @@ export async function getTransformations({
   isBringingKey?: boolean;
 }) {
   const email = await getUserEmail(clerkUserId);
+  if (isBringingKey) {
+    return fallbackTransformByok;
+  }
   if (isTogetherUser(email)) {
-    return isBringingKey ? fallbackTransformByok : fallbackTransform;
+    return fallbackTransform;
   }
   if (!clerkUserId) {
-    return isBringingKey ? fallbackTransformByok : fallbackTransform;
+    return fallbackTransform;
   }
-  const limiter = isBringingKey
-    ? transformLimiterByok
-    : transformLimiterDefault;
+  const limiter = transformLimiterDefault;
   if (!limiter) {
-    return isBringingKey ? fallbackTransformByok : fallbackTransform;
+    return fallbackTransform;
   }
-  const key = (isBringingKey ? BYOK_PREFIX : "") + clerkUserId;
+  const key = clerkUserId;
   try {
     const result = await limiter.getRemaining(key);
     return result;
   } catch {
-    return isBringingKey ? fallbackTransformByok : fallbackTransform;
+    return fallbackTransform;
   }
 }

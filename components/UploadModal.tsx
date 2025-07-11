@@ -16,6 +16,7 @@ import { useMutation } from "@tanstack/react-query";
 import { RecordingBasics } from "./RecordingBasics";
 import { RecordingMinutesLeft } from "./RecordingMinutesLeft";
 import { useQuery } from "@tanstack/react-query";
+import { useTogetherApiKey } from "./TogetherApiKeyProvider";
 
 export function UploadModal({ onClose }: { onClose: () => void }) {
   const [noteType, setNoteType] = useState("quick-note");
@@ -25,6 +26,8 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
   const { uploadToS3 } = useS3Upload();
   const router = useRouter();
   const trpc = useTRPC();
+  const { apiKey } = useTogetherApiKey();
+  const isBYOK = !!apiKey;
   const transcribeMutation = useMutation(
     trpc.whisper.transcribeFromS3.mutationOptions()
   );
@@ -126,7 +129,9 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
                   <span className="text-sm text-[#4a5565]">Loading...</span>
                 ) : (
                   <RecordingMinutesLeft
-                    minutesLeft={minutesData?.remaining ?? 0}
+                    minutesLeft={
+                      isBYOK ? Infinity : minutesData?.remaining ?? 0
+                    }
                   />
                 )}
               </div>

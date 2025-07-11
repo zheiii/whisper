@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Search } from "lucide-react";
@@ -36,6 +36,23 @@ export function Dashboard({
   const handleNewWhisper = () => {
     setShowRecordingModal(true);
   };
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (
+        e.metaKey &&
+        e.shiftKey &&
+        (e.code === "Space" || e.key === " " || e.key === "Spacebar")
+      ) {
+        e.preventDefault();
+        handleNewWhisper();
+      }
+    };
+    window.addEventListener("keydown", handleKeyDown);
+    return () => {
+      window.removeEventListener("keydown", handleKeyDown);
+    };
+  }, []);
 
   const handleUploadVoiceNote = () => {
     setShowUploadModal(true);
@@ -118,6 +135,7 @@ export function Dashboard({
             >
               <img src="/microphone.svg" className="w-5 h-5 size-5" />
               New Whisper
+              <img src="/command.svg" className="w-[87px] h-[16px]" />
             </Button>
           </div>
         </div>

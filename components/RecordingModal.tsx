@@ -20,6 +20,7 @@ import { RecordingBasics } from "./RecordingBasics";
 import { useTRPC } from "@/trpc/client";
 import { RecordingMinutesLeft } from "./RecordingMinutesLeft";
 import { useQuery } from "@tanstack/react-query";
+import { useTogetherApiKey } from "./TogetherApiKeyProvider";
 
 interface RecordingModalProps {
   onClose: () => void;
@@ -146,6 +147,8 @@ export function RecordingModal({
   >(null);
 
   const trpc = useTRPC();
+  const { apiKey } = useTogetherApiKey();
+  const isBYOK = !!apiKey;
   const { data: minutesData, isLoading: isMinutesLoading } = useQuery(
     trpc.limit.getMinutesLeft.queryOptions()
   );
@@ -326,7 +329,7 @@ export function RecordingModal({
                 <span className="text-sm text-[#4a5565]">Loading...</span>
               ) : (
                 <RecordingMinutesLeft
-                  minutesLeft={minutesData?.remaining ?? 0}
+                  minutesLeft={isBYOK ? Infinity : minutesData?.remaining ?? 0}
                 />
               )}
             </div>

@@ -10,6 +10,9 @@ import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useCallback, useState, useRef, useEffect } from "react";
 import { useTogetherApiKey } from "./TogetherApiKeyProvider";
 import { toast } from "sonner";
+import { useTRPC } from "@/trpc/client";
+import { useQuery } from "@tanstack/react-query";
+import { RecordingMinutesLeft } from "./RecordingMinutesLeft";
 
 export const ModalCustomApiKey = () => {
   const searchParams = useSearchParams();
@@ -22,6 +25,11 @@ export const ModalCustomApiKey = () => {
   const [togetherApiKey, setTogetherApiKey] = useState("");
   const [isValidating, setIsValidating] = useState(false);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const trpc = useTRPC();
+  const isBYOK = !!apiKey;
+  const { data: minutesData, isLoading: isMinutesLoading } = useQuery(
+    trpc.limit.getMinutesLeft.queryOptions()
+  );
 
   useEffect(() => {
     setTogetherApiKey(apiKey || "");
@@ -191,10 +199,13 @@ export const ModalCustomApiKey = () => {
           </div>
         </div>
         <div className="w-full flex justify-start px-5 py-3 mt-auto border-t border-gray-200">
-          <p className="text-sm text-[#4a5565]">
-            <span className="font-light">Recordings left: </span>
-            <span className="font-medium text-[#101828]">5</span>
-          </p>
+          {isMinutesLoading ? (
+            <span className="text-sm text-[#4a5565]">Loading...</span>
+          ) : (
+            <RecordingMinutesLeft
+              minutesLeft={isBYOK ? Infinity : minutesData?.remaining ?? 0}
+            />
+          )}
         </div>
       </DialogContent>
     </Dialog>

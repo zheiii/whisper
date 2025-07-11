@@ -18,17 +18,21 @@ import { useTRPC } from "@/trpc/client";
 import { RecordingMinutesLeft } from "./RecordingMinutesLeft";
 import { useQuery } from "@tanstack/react-query";
 import { toast } from "sonner";
+import { useTogetherApiKey } from "./TogetherApiKeyProvider";
 
 export function Header() {
   const pathname = usePathname();
   const { user } = useUser();
   const [mounted, setMounted] = React.useState(false);
   const trpc = useTRPC();
+  const { apiKey } = useTogetherApiKey();
+
+  const isBYOK = !!apiKey;
 
   const { data: transformationsData, isLoading: isTransformationsLoading } =
     useQuery({
       ...trpc.limit.getTransformationsLeft.queryOptions(),
-      enabled: !!user,
+      enabled: !!user && !isBYOK, // Don't fetch if BYOK (unlimited)
     });
 
   React.useEffect(() => {
@@ -82,7 +86,9 @@ export function Header() {
           <Button
             className="w-[51px] h-[30px] relative rounded-lg bg-white hover:bg-gray-50 border-[0.5px] border-gray-200"
             onClick={() => {
-              if (!isTransformationsLoading) {
+              if (isBYOK) {
+                toast("You have unlimited transformations for your whispers!");
+              } else if (!isTransformationsLoading) {
                 toast(
                   `You got ${
                     transformationsData?.remaining ?? 0
@@ -93,7 +99,9 @@ export function Header() {
           >
             <img src="/spark.svg" className="size-4 min-w-4" />
             <p className="text-sm font-medium text-left text-[#1e2939]">
-              {isTransformationsLoading
+              {isBYOK
+                ? "∞"
+                : isTransformationsLoading
                 ? "..."
                 : transformationsData?.remaining ?? 0}
             </p>
