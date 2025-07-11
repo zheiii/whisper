@@ -3,24 +3,18 @@
 import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import {
   Dialog,
   DialogContent,
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { cn, MAIN_LANGUAGES } from "@/lib/utils";
+import { cn } from "@/lib/utils";
 import { RecordingBasics } from "./RecordingBasics";
 import { useTRPC } from "@/trpc/client";
 import { RecordingMinutesLeft } from "./RecordingMinutesLeft";
 import { useQuery } from "@tanstack/react-query";
 import { useTogetherApiKey } from "./TogetherApiKeyProvider";
+import useLocalStorage from "./useLocalStorage";
 
 interface RecordingModalProps {
   onClose: () => void;
@@ -130,13 +124,9 @@ function Waveform({ isRecording }: { isRecording: boolean }) {
   );
 }
 
-export function RecordingModal({
-  onClose,
-  onSave,
-  title = "New Whisper",
-}: RecordingModalProps) {
+export function RecordingModal({ onClose, onSave }: RecordingModalProps) {
   const [noteType, setNoteType] = useState("quick-note");
-  const [language, setLanguage] = useState("en-US");
+  const [language, setLanguage] = useLocalStorage("language", "en-US");
 
   const [isRecording, setIsRecording] = useState(false);
   const [recordingTime, setRecordingTime] = useState(0);
@@ -265,7 +255,7 @@ export function RecordingModal({
         className="!max-w-[392px] !p-0 border border-gray-200 rounded-tl-xl rounded-tr-xl bg-white overflow-hidden gap-0"
       >
         <DialogHeader className="p-0">
-          <DialogTitle className="sr-only">{title}</DialogTitle>
+          <DialogTitle className="sr-only">Recording Modal</DialogTitle>
         </DialogHeader>
         {/* Microphone permission warning */}
         {micPermission === "denied" && (

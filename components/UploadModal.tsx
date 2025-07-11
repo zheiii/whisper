@@ -17,10 +17,11 @@ import { RecordingBasics } from "./RecordingBasics";
 import { RecordingMinutesLeft } from "./RecordingMinutesLeft";
 import { useQuery } from "@tanstack/react-query";
 import { useTogetherApiKey } from "./TogetherApiKeyProvider";
+import useLocalStorage from "./useLocalStorage";
 
 export function UploadModal({ onClose }: { onClose: () => void }) {
   const [noteType, setNoteType] = useState("quick-note");
-  const [language, setLanguage] = useState("en-US");
+  const [language, setLanguage] = useLocalStorage("language", "en-US");
 
   const [isDragActive, setIsDragActive] = useState(false);
   const { uploadToS3 } = useS3Upload();

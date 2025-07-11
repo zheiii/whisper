@@ -60,6 +60,16 @@ export function LandingPage() {
           <p className="text-sm text-center text-[#6a7282] mt-2">
             Free &amp; open source
           </p>
+
+          <img
+            src="/home-screen.png"
+            className="mt-12 max-w-[323px] ml-[-40px] md:hidden"
+          />
+
+          <img
+            src="/home-screen-desktop.png"
+            className="hidden md:block max-w-[784px] mt-12"
+          />
         </div>
       </main>
     </>
