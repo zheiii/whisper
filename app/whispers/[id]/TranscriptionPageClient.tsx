@@ -28,9 +28,6 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
     trpc.whisper.updateFullTranscription.mutationOptions()
   );
   const titleMutation = useMutation(trpc.whisper.updateTitle.mutationOptions());
-  const duplicateMutation = useMutation(
-    trpc.whisper.duplicateWhisper.mutationOptions()
-  );
 
   useEffect(() => {
     if (whisper?.fullTranscription) {
@@ -164,22 +161,15 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
           <button
             className="flex-1 py-2 cursor-pointer rounded-lg border border-slate-200 bg-white text-[#364153] font-medium flex items-center justify-center gap-2"
             onClick={async () => {
-              if (duplicateMutation.status === "pending") return;
-              duplicateMutation.mutate(
-                { id },
-                {
-                  onSuccess: (data) => {
-                    if (data?.id) router.push(`/whispers/${data.id}`);
-                  },
-                }
-              );
+              // just copy the transcript to clipboard
+              await navigator.clipboard.writeText(editableTranscription);
+              toast.success("Copied to clipboard!", {
+                id: "copy-to-clipboard",
+              });
             }}
-            disabled={duplicateMutation.status === "pending"}
           >
             <img src="/copy.svg" className="size-5 min-w-5 min-h-5" />
-            <span>
-              {duplicateMutation.status === "pending" ? "Copying..." : "Copy"}
-            </span>
+            <span>Copy</span>
           </button>
           <Link
             href="/whispers"
