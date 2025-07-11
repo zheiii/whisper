@@ -49,7 +49,11 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
         // Upload to S3
         const { url } = await uploadToS3(file);
         // Call tRPC mutation
-        const { id } = await transcribeMutation.mutateAsync({ audioUrl: url });
+        const { id } = await transcribeMutation.mutateAsync({
+          audioUrl: url,
+          language,
+          noteType,
+        });
         // Redirect to whisper page
         router.push(`/whispers/${id}`);
       } catch (err) {

@@ -23,36 +23,15 @@ export const whisperRouter = t.router({
       // duration: ... // If you want to add duration, you can extend the model or calculate from audioTracks
     }));
   }),
-  createWhisper: protectedProcedure
+  transcribeFromS3: protectedProcedure
     .input(
       z.object({
-        title: z.string(),
-        content: z.string(),
-        preview: z.string(),
-        timestamp: z.string(),
-        duration: z.string().optional(),
+        audioUrl: z.string(),
+        whisperId: z.string().optional(),
+        language: z.string().optional(),
+        noteType: z.string().optional(),
       })
     )
-    .mutation(async ({ input, ctx }) => {
-      const whisper = await prisma.whisper.create({
-        data: {
-          userId: ctx.auth.userId,
-          title: input.title,
-          fullTranscription: input.content,
-          createdAt: new Date(input.timestamp),
-        },
-      });
-      return {
-        id: whisper.id,
-        title: whisper.title,
-        content: whisper.fullTranscription,
-        preview: input.preview,
-        timestamp: whisper.createdAt.toISOString(),
-        duration: input.duration,
-      };
-    }),
-  transcribeFromS3: protectedProcedure
-    .input(z.object({ audioUrl: z.string(), whisperId: z.string().optional() }))
     .mutation(async ({ input, ctx }) => {
       // 1. Call Fal Whisper
       fal.config({ credentials: process.env.FAL_KEY! });
@@ -78,6 +57,7 @@ export const whisperRouter = t.router({
             fileUrl: input.audioUrl,
             partialTranscription: transcription,
             whisperId: input.whisperId,
+            language: input.language,
           },
         });
         // Append to fullTranscription
@@ -102,6 +82,7 @@ export const whisperRouter = t.router({
                 {
                   fileUrl: input.audioUrl,
                   partialTranscription: transcription,
+                  language: input.language,
                 },
               ],
             },

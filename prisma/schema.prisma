@@ -30,4 +30,5 @@ model AudioTrack {
   createdAt            DateTime @default(now())
   whisper              Whisper  @relation(fields: [whisperId], references: [id])
   whisperId            String
+  language             String? // Added for language selection
 }

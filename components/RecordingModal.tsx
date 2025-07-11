@@ -15,6 +15,12 @@ import { RecordingMinutesLeft } from "./RecordingMinutesLeft";
 import { useQuery } from "@tanstack/react-query";
 import { useTogetherApiKey } from "./TogetherApiKeyProvider";
 import useLocalStorage from "./useLocalStorage";
+import { AudioWaveform } from "./AudioWaveform";
+import { useAudioRecording } from "./useAudioRecording";
+import { useS3Upload } from "next-s3-upload";
+import { toast } from "sonner";
+import { useRouter } from "next/navigation";
+import { useMutation } from "@tanstack/react-query";
 
 interface RecordingModalProps {
   onClose: () => void;
@@ -36,105 +42,25 @@ declare global {
   }
 }
 
-// Dynamic waveform component
-function Waveform({ isRecording }: { isRecording: boolean }) {
-  const [dataArray, setDataArray] = useState<number[]>([]);
-  const animationRef = useRef<number | undefined>(undefined);
-  const analyserRef = useRef<AnalyserNode | null>(null);
-  const sourceRef = useRef<MediaStreamAudioSourceNode | null>(null);
-  const audioContextRef = useRef<AudioContext | null>(null);
-
-  useEffect(() => {
-    if (!isRecording) {
-      setDataArray([]);
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
-      if (analyserRef.current) analyserRef.current.disconnect();
-      if (sourceRef.current) sourceRef.current.disconnect();
-      if (audioContextRef.current) audioContextRef.current.close();
-      analyserRef.current = null;
-      sourceRef.current = null;
-      audioContextRef.current = null;
-      return;
-    }
-    let isMounted = true;
-    const setup = async () => {
-      try {
-        const stream = window.currentStream;
-        if (!stream) return;
-        const audioContext = new (window.AudioContext ||
-          (window as any).webkitAudioContext)();
-        audioContextRef.current = audioContext;
-        const source = audioContext.createMediaStreamSource(stream);
-        sourceRef.current = source;
-        const analyser = audioContext.createAnalyser();
-        analyser.fftSize = 64;
-        analyserRef.current = analyser;
-        source.connect(analyser);
-        const bufferLength = analyser.frequencyBinCount;
-        const dataArr = new Uint8Array(bufferLength);
-        function draw() {
-          analyser.getByteTimeDomainData(dataArr);
-          // Normalize and map to bar heights
-          const bars = Array.from(dataArr).map((v) => (v - 128) / 128);
-          if (isMounted) setDataArray(bars);
-          animationRef.current = requestAnimationFrame(draw);
-        }
-        draw();
-      } catch (e) {
-        // ignore
-      }
-    };
-    setup();
-    return () => {
-      isMounted = false;
-      if (animationRef.current) cancelAnimationFrame(animationRef.current);
-      if (analyserRef.current) analyserRef.current.disconnect();
-      if (sourceRef.current) sourceRef.current.disconnect();
-      if (audioContextRef.current) audioContextRef.current.close();
-      analyserRef.current = null;
-      sourceRef.current = null;
-      audioContextRef.current = null;
-    };
-  }, [isRecording]);
-
-  // Render bars
-  return (
-    <div className="w-52 h-4 flex items-end gap-[1.5px] relative overflow-hidden">
-      {dataArray.length > 0
-        ? dataArray.map((v, i) => (
-            <div
-              key={i}
-              className="bg-[#4a5565]"
-              style={{
-                width: "1.43px",
-                height: `${Math.max(6, Math.abs(v) * 16)}px`,
-                borderRadius: "1px",
-                transition: "height 0.08s linear",
-              }}
-            />
-          ))
-        : Array.from({ length: 32 }).map((_, i) => (
-            <div
-              key={i}
-              className="bg-[#e5e7eb]"
-              style={{ width: "1.43px", height: "8px", borderRadius: "1px" }}
-            />
-          ))}
-    </div>
-  );
-}
-
 export function RecordingModal({ onClose, onSave }: RecordingModalProps) {
   const [noteType, setNoteType] = useState("quick-note");
   const [language, setLanguage] = useLocalStorage("language", "en-US");
+  const { uploadToS3 } = useS3Upload();
 
-  const [isRecording, setIsRecording] = useState(false);
-  const [recordingTime, setRecordingTime] = useState(0);
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [hasRecording, setHasRecording] = useState(false);
-  const [micPermission, setMicPermission] = useState<
-    "granted" | "denied" | "prompt" | null
-  >(null);
+  const {
+    recording,
+    paused,
+    audioUrl,
+    audioBlob,
+    analyserNode,
+    duration,
+    error,
+    startRecording,
+    stopRecording,
+    pauseRecording,
+    resumeRecording,
+    resetRecording,
+  } = useAudioRecording();
 
   const trpc = useTRPC();
   const { apiKey } = useTogetherApiKey();
@@ -143,41 +69,24 @@ export function RecordingModal({ onClose, onSave }: RecordingModalProps) {
     trpc.limit.getMinutesLeft.queryOptions()
   );
 
+  const router = useRouter();
+  const transcribeMutation = useMutation(
+    trpc.whisper.transcribeFromS3.mutationOptions()
+  );
+
+  const [isProcessing, setIsProcessing] = useState(false);
+
   // Check microphone permission on mount
   useEffect(() => {
     if (typeof window !== "undefined" && navigator.permissions) {
       navigator.permissions
         .query({ name: "microphone" as PermissionName })
         .then((result) => {
-          setMicPermission(result.state as "granted" | "denied" | "prompt");
-          result.onchange = () =>
-            setMicPermission(result.state as "granted" | "denied" | "prompt");
+          // setMicPermission(result.state as "granted" | "denied" | "prompt");
+          result.onchange = () => {};
         });
     }
   }, []);
-
-  // Recording time logic without intervalRef
-  useEffect(() => {
-    let timer: NodeJS.Timeout | undefined;
-    if (isRecording) {
-      timer = setTimeout(() => {
-        setRecordingTime((prev) => prev + 1);
-      }, 1000);
-    }
-    return () => {
-      if (timer) clearTimeout(timer);
-      // Stop recording if modal is closed while recording
-      if (
-        window.currentMediaRecorder &&
-        window.currentMediaRecorder.state !== "inactive"
-      ) {
-        window.currentMediaRecorder.stop();
-      }
-      if (window.currentStream) {
-        window.currentStream.getTracks().forEach((track) => track.stop());
-      }
-    };
-  }, [isRecording, recordingTime]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -185,67 +94,30 @@ export function RecordingModal({ onClose, onSave }: RecordingModalProps) {
     return `${mins}:${secs.toString().padStart(2, "0")}`;
   };
 
-  const handleStartRecording = async () => {
-    console.log("handleStartRecording");
-    try {
-      // Request microphone permission
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      setIsRecording(true);
-      setRecordingTime(0);
-      setHasRecording(false);
-      const mediaRecorder = new MediaRecorder(stream);
-      window.currentMediaRecorder = mediaRecorder;
-      window.currentStream = stream;
-      mediaRecorder.start();
-    } catch (error) {
-      console.error("Microphone access error:", error);
-      alert("Microphone access is required to record audio.");
+  const handleSaveRecording = async () => {
+    if (!audioBlob) {
+      toast.error("No audio to save. Please record something first.");
+      return;
     }
-  };
-
-  const handleStopRecording = () => {
-    setIsRecording(false);
-    setHasRecording(true);
-    if (
-      window.currentMediaRecorder &&
-      window.currentMediaRecorder.state !== "inactive"
-    ) {
-      window.currentMediaRecorder.stop();
-    }
-    if (window.currentStream) {
-      window.currentStream.getTracks().forEach((track) => track.stop());
-    }
-  };
-
-  const handleSaveRecording = () => {
     setIsProcessing(true);
-    setTimeout(() => {
-      const sampleTranscriptions = [
-        "I had a great meeting today with the team. We discussed the new project timeline and everyone seems excited about the upcoming features. Need to follow up with Sarah about the design mockups.",
-        "Reminder to pick up groceries on the way home. Need milk, bread, eggs, and don't forget the cat food. Also need to call mom about dinner plans for Sunday.",
-        "Just finished reading an interesting article about artificial intelligence and its impact on productivity. The key takeaway is that AI tools can help us focus on more creative tasks while handling routine work.",
-        "Meeting notes from today's standup: John is working on the authentication system, Lisa is finishing up the dashboard components, and I need to review the API documentation before tomorrow's client call.",
-      ];
-      const randomTranscription =
-        sampleTranscriptions[
-          Math.floor(Math.random() * sampleTranscriptions.length)
-        ];
-      const preview =
-        randomTranscription.length > 100
-          ? randomTranscription.substring(0, 100) + "..."
-          : randomTranscription;
-      onSave({
-        title: `${
-          noteType === "quick-note" ? "Quick Note" : "Voice Memo"
-        } - ${new Date().toLocaleDateString()}`,
-        content: randomTranscription,
-        preview,
-        timestamp: new Date().toLocaleDateString(),
-        duration: formatTime(recordingTime),
+    try {
+      // Upload to S3
+      const file = new File([audioBlob], `recording-${Date.now()}.webm`, {
+        type: "audio/webm",
       });
+      const { url } = await uploadToS3(file);
+      // Call tRPC mutation
+      const { id } = await transcribeMutation.mutateAsync({
+        audioUrl: url,
+        language,
+        noteType,
+      });
+      // Redirect to whisper page
+      router.push(`/whispers/${id}`);
+    } catch (err) {
+      toast.error("Failed to transcribe audio. Please try again.");
       setIsProcessing(false);
-      onClose();
-    }, 2000);
+    }
   };
 
   return (
@@ -257,54 +129,81 @@ export function RecordingModal({ onClose, onSave }: RecordingModalProps) {
         <DialogHeader className="p-0">
           <DialogTitle className="sr-only">Recording Modal</DialogTitle>
         </DialogHeader>
-        {/* Microphone permission warning */}
-        {micPermission === "denied" && (
-          <div className="bg-red-100 text-red-700 text-sm px-4 py-2 text-center">
-            Microphone access denied. Please enable it in your browser settings
-            to record audio.
-          </div>
-        )}
 
         <div className="flex flex-col items-center w-full bg-white">
-          {!isRecording ? (
-            <RecordingBasics
-              noteType={noteType}
-              setNoteType={setNoteType}
-              language={language}
-              setLanguage={setLanguage}
-            />
+          {!recording ? (
+            <>
+              <RecordingBasics
+                noteType={noteType}
+                setNoteType={setNoteType}
+                language={language}
+                setLanguage={setLanguage}
+              />
+              {/* Playback audio after stop */}
+              {audioUrl && (
+                <div className="w-full flex flex-col items-center my-4">
+                  <audio controls src={audioUrl} className="w-full" />
+                </div>
+              )}
+            </>
           ) : (
-            <div className="flex flex-row gap-8">
-              <div className="size-10 bg-[#FFEEEE] p-2.5 rounded-xl">
+            <div className="flex flex-row gap-8 mt-8">
+              {/* X Button: Reset recording */}
+              <button
+                className="size-10 bg-[#FFEEEE] p-2.5 rounded-xl cursor-pointer"
+                onClick={resetRecording}
+                type="button"
+                aria-label="Reset recording"
+              >
                 <img src="/X.svg" className="size-5 min-w-5" />
-              </div>
+              </button>
 
               <div className="flex flex-col gap-1">
                 <p className="text-base text-center text-[#364153]">
-                  {formatTime(recordingTime)}
+                  {formatTime(duration)}
                 </p>
-                <Waveform isRecording={isRecording} />
+                <AudioWaveform analyserNode={analyserNode} />
               </div>
 
-              <div className="size-10 bg-[#1E2939] p-2.5 rounded-xl">
-                <img src="/pause.svg" className="size-5 min-w-5" />
-              </div>
+              {/* Pause/Resume Button */}
+              {paused ? (
+                <button
+                  className="size-10 bg-[#1E2939] p-2.5 rounded-xl cursor-pointer"
+                  onClick={resumeRecording}
+                  type="button"
+                  aria-label="Resume recording"
+                >
+                  <img src="/microphone.svg" className="size-5 min-w-5" />
+                </button>
+              ) : (
+                <button
+                  className="size-10 bg-[#1E2939] p-2.5 rounded-xl cursor-pointer"
+                  onClick={pauseRecording}
+                  type="button"
+                  aria-label="Pause recording"
+                >
+                  <img src="/pause.svg" className="size-5 min-w-5" />
+                </button>
+              )}
             </div>
           )}
 
           <Button
             className={cn(
-              isRecording ? "bg-[#6D1414]" : "bg-[#101828]",
-              "w-[352px] h-[86px] rounded-xl flex flex-col items-center justify-center my-5"
+              recording ? "bg-[#6D1414]" : "bg-[#101828]",
+              "w-[352px] h-[86px] rounded-xl flex flex-row gap-3 items-center justify-center my-5"
             )}
-            onClick={isRecording ? handleStopRecording : handleStartRecording}
+            onClick={recording ? stopRecording : startRecording}
             disabled={isProcessing}
           >
-            {isRecording ? (
-              <img
-                src="/stop.svg"
-                className="min-w-9 min-h-9 size-9 text-white"
-              />
+            {recording ? (
+              <>
+                <img
+                  src="/stop.svg"
+                  className="min-w-7 min-h-7 size-7 text-white"
+                />
+                <p>Stop Recording</p>
+              </>
             ) : (
               <img
                 src="/microphone.svg"
@@ -313,7 +212,7 @@ export function RecordingModal({ onClose, onSave }: RecordingModalProps) {
             )}
           </Button>
 
-          {!isRecording && (
+          {!recording && (
             <div className="w-full flex flex-col py-3 px-5 border-t border-gray-200">
               {isMinutesLoading ? (
                 <span className="text-sm text-[#4a5565]">Loading...</span>
@@ -321,6 +220,15 @@ export function RecordingModal({ onClose, onSave }: RecordingModalProps) {
                 <RecordingMinutesLeft
                   minutesLeft={isBYOK ? Infinity : minutesData?.remaining ?? 0}
                 />
+              )}
+              {audioUrl && (
+                <Button
+                  className="mt-4 w-full"
+                  onClick={handleSaveRecording}
+                  disabled={isProcessing || !audioBlob}
+                >
+                  {isProcessing ? "Processing..." : "Save Recording"}
+                </Button>
               )}
             </div>
           )}
