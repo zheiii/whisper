@@ -9,6 +9,36 @@ import {
 } from "@/components/ui/select";
 import { MAIN_LANGUAGES } from "@/lib/utils";
 
+export const RecordingTypes: {
+  name: string;
+  value: string;
+}[] = [
+  {
+    name: "Summary",
+    value: "summary",
+  },
+  {
+    name: "Quick Note",
+    value: "quick-note",
+  },
+  {
+    name: "List",
+    value: "list",
+  },
+  {
+    name: "Blog post",
+    value: "blog",
+  },
+  {
+    name: "Email",
+    value: "email",
+  },
+  {
+    name: "Custom Prompt",
+    value: "custom-prompt",
+  },
+];
+
 export const RecordingBasics = ({
   noteType,
   setNoteType,
@@ -34,13 +64,22 @@ export const RecordingBasics = ({
         <div className="w-full">
           <Select value={noteType} onValueChange={setNoteType}>
             <SelectTrigger className="w-full h-9 bg-gray-100 border border-[#d1d5dc] rounded-lg">
-              <SelectValue />
+              <SelectValue className="flex items-center" />
             </SelectTrigger>
             <SelectContent>
-              <SelectItem value="quick-note">📝 Quick note</SelectItem>
-              <SelectItem value="meeting-notes">📋 Meeting notes</SelectItem>
-              <SelectItem value="voice-memo">🎤 Voice memo</SelectItem>
-              <SelectItem value="idea">💡 Idea</SelectItem>
+              {RecordingTypes.map((type) => (
+                <SelectItem
+                  key={type.value}
+                  value={type.value}
+                  className="flex items-center gap-2"
+                >
+                  <img
+                    src={`/recordings/${type.value}.svg`}
+                    className="size-[18px] min-w-[18px]"
+                  />
+                  <span>{type.name}</span>
+                </SelectItem>
+              ))}
             </SelectContent>
           </Select>
         </div>
