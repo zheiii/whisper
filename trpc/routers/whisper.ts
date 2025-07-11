@@ -36,7 +36,10 @@ export const whisperRouter = t.router({
       // 1. Call Fal Whisper
       fal.config({ credentials: process.env.FAL_KEY! });
       const result = await fal.subscribe("fal-ai/whisper", {
-        input: { audio_url: input.audioUrl },
+        input: {
+          audio_url: input.audioUrl,
+          language: (input.language as any) || undefined,
+        },
       });
       const transcription = result.data.text as string;
       // Generate a title from the transcription (first 8 words or fallback)

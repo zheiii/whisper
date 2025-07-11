@@ -14,44 +14,40 @@ export function cn(...inputs: ClassValue[]) {
 
 export const MAIN_LANGUAGES = [
   {
-    value: "en-US",
-    name: "English (US)",
+    value: "en",
+    name: "English",
   },
   {
-    value: "en-GB",
-    name: "English (UK)",
-  },
-  {
-    value: "fr-FR",
+    value: "fr",
     name: "French",
   },
   {
-    value: "es-ES",
+    value: "es",
     name: "Spanish",
   },
   {
-    value: "de-DE",
+    value: "de",
     name: "German",
   },
   {
-    value: "it-IT",
+    value: "it",
     name: "Italian",
   },
   {
-    value: "pt-BR",
-    name: "Portuguese (Brazil)",
+    value: "pt",
+    name: "Portuguese",
   },
   {
-    value: "ja-JP",
+    value: "ja",
     name: "Japanese",
   },
   {
-    value: "ko-KR",
+    value: "ko",
     name: "Korean",
   },
   {
-    value: "zh-CN",
-    name: "Chinese (Simplified)",
+    value: "zh",
+    name: "Chinese",
   },
 ];
 

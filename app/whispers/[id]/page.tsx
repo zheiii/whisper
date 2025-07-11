@@ -31,7 +31,11 @@ export async function generateMetadata(
   };
 }
 
-export default async function TranscriptionPage(props: Promise<PageProps>) {
-  const { params } = await props;
-  return <TranscriptionPageClient id={params.id} />;
+export default async function TranscriptionPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
+  const { id } = await params;
+  return <TranscriptionPageClient id={id} />;
 }

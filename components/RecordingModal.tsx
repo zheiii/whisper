@@ -75,6 +75,7 @@ export function RecordingModal({ onClose, onSave }: RecordingModalProps) {
   );
 
   const [isProcessing, setIsProcessing] = useState(false);
+  const [hasTriggeredUpload, setHasTriggeredUpload] = useState(false);
 
   // Check microphone permission on mount
   useEffect(() => {
@@ -87,6 +88,18 @@ export function RecordingModal({ onClose, onSave }: RecordingModalProps) {
         });
     }
   }, []);
+
+  // Automatically upload and transcribe after recording stops
+  useEffect(() => {
+    if (!recording && audioBlob && !isProcessing && !hasTriggeredUpload) {
+      setHasTriggeredUpload(true);
+      handleSaveRecording();
+    }
+    // Reset trigger if user records again
+    if (recording && hasTriggeredUpload) {
+      setHasTriggeredUpload(false);
+    }
+  }, [recording, audioBlob, isProcessing, hasTriggeredUpload]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -139,12 +152,18 @@ export function RecordingModal({ onClose, onSave }: RecordingModalProps) {
                 language={language}
                 setLanguage={setLanguage}
               />
-              {/* Playback audio after stop */}
-              {audioUrl && (
+              {/* Show spinner after stop, else playback */}
+              {isProcessing ? (
+                <div className="w-full flex flex-col items-center my-4">
+                  <span className="text-base text-[#4a5565]">
+                    Processing...
+                  </span>
+                </div>
+              ) : audioUrl ? (
                 <div className="w-full flex flex-col items-center my-4">
                   <audio controls src={audioUrl} className="w-full" />
                 </div>
-              )}
+              ) : null}
             </>
           ) : (
             <div className="flex flex-row gap-8 mt-8">
@@ -221,15 +240,7 @@ export function RecordingModal({ onClose, onSave }: RecordingModalProps) {
                   minutesLeft={isBYOK ? Infinity : minutesData?.remaining ?? 0}
                 />
               )}
-              {audioUrl && (
-                <Button
-                  className="mt-4 w-full"
-                  onClick={handleSaveRecording}
-                  disabled={isProcessing || !audioBlob}
-                >
-                  {isProcessing ? "Processing..." : "Save Recording"}
-                </Button>
-              )}
+              {/* No Save button, processing is automatic */}
             </div>
           )}
         </div>
