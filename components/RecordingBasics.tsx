@@ -44,11 +44,13 @@ export const RecordingBasics = ({
   setNoteType,
   language,
   setLanguage,
+  disabled,
 }: {
   noteType: string;
   setNoteType: (noteType: string) => void;
   language?: string;
   setLanguage?: (language: string) => void;
+  disabled?: boolean;
 }) => {
   return (
     <>
@@ -62,7 +64,11 @@ export const RecordingBasics = ({
           </span>
         </div>
         <div className="w-full">
-          <Select value={noteType} onValueChange={setNoteType}>
+          <Select
+            disabled={disabled}
+            value={noteType}
+            onValueChange={setNoteType}
+          >
             <SelectTrigger className="w-full h-9 bg-gray-100 border border-[#d1d5dc] rounded-lg">
               <SelectValue className="flex items-center" />
             </SelectTrigger>
@@ -91,7 +97,11 @@ export const RecordingBasics = ({
           </span>
         </div>
         <div className="w-full">
-          <Select value={language} onValueChange={setLanguage}>
+          <Select
+            disabled={disabled}
+            value={language}
+            onValueChange={setLanguage}
+          >
             <SelectTrigger className="w-full h-9 bg-gray-100 border border-[#d1d5dc] rounded-lg">
               <SelectValue />
             </SelectTrigger>

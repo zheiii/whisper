@@ -45,6 +45,7 @@ declare global {
 export function RecordingModal({ onClose, onSave }: RecordingModalProps) {
   const [noteType, setNoteType] = useState("quick-note");
   const [language, setLanguage] = useLocalStorage("language", "en-US");
+
   const { uploadToS3 } = useS3Upload();
 
   const {
@@ -143,107 +144,111 @@ export function RecordingModal({ onClose, onSave }: RecordingModalProps) {
           <DialogTitle className="sr-only">Recording Modal</DialogTitle>
         </DialogHeader>
 
-        <div className="flex flex-col items-center w-full bg-white">
-          {!recording ? (
-            <>
-              <RecordingBasics
-                noteType={noteType}
-                setNoteType={setNoteType}
-                language={language}
-                setLanguage={setLanguage}
-              />
-              {/* Show spinner after stop, else playback */}
-              {isProcessing ? (
-                <div className="w-full flex flex-col items-center my-4">
-                  <span className="text-base text-[#4a5565]">
-                    Processing...
-                  </span>
-                </div>
-              ) : audioUrl ? (
-                <div className="w-full flex flex-col items-center my-4">
-                  <audio controls src={audioUrl} className="w-full" />
-                </div>
-              ) : null}
-            </>
-          ) : (
-            <div className="flex flex-row gap-8 mt-8">
-              {/* X Button: Reset recording */}
-              <button
-                className="size-10 bg-[#FFEEEE] p-2.5 rounded-xl cursor-pointer"
-                onClick={resetRecording}
-                type="button"
-                aria-label="Reset recording"
-              >
-                <img src="/X.svg" className="size-5 min-w-5" />
-              </button>
-
-              <div className="flex flex-col gap-1">
-                <p className="text-base text-center text-[#364153]">
-                  {formatTime(duration)}
-                </p>
-                <AudioWaveform analyserNode={analyserNode} />
-              </div>
-
-              {/* Pause/Resume Button */}
-              {paused ? (
-                <button
-                  className="size-10 bg-[#1E2939] p-2.5 rounded-xl cursor-pointer"
-                  onClick={resumeRecording}
-                  type="button"
-                  aria-label="Resume recording"
-                >
-                  <img src="/microphone.svg" className="size-5 min-w-5" />
-                </button>
-              ) : (
-                <button
-                  className="size-10 bg-[#1E2939] p-2.5 rounded-xl cursor-pointer"
-                  onClick={pauseRecording}
-                  type="button"
-                  aria-label="Pause recording"
-                >
-                  <img src="/pause.svg" className="size-5 min-w-5" />
-                </button>
-              )}
-            </div>
-          )}
-
-          <Button
-            className={cn(
-              recording ? "bg-[#6D1414]" : "bg-[#101828]",
-              "w-[352px] h-[86px] rounded-xl flex flex-row gap-3 items-center justify-center my-5"
-            )}
-            onClick={recording ? stopRecording : startRecording}
-            disabled={isProcessing}
-          >
-            {recording ? (
+        {isProcessing ? (
+          <div className="flex flex-col items-center justify-center h-full gap-4 p-4">
+            <img
+              src="/loading.svg"
+              alt="Loading"
+              className="w-8 h-8 animate-spin"
+            />
+            <p className="text-gray-500">
+              Uploading audio recording
+              <span className="animate-pulse">...</span>
+            </p>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center w-full bg-white">
+            {!recording ? (
               <>
-                <img
-                  src="/stop.svg"
-                  className="min-w-7 min-h-7 size-7 text-white"
+                <RecordingBasics
+                  noteType={noteType}
+                  setNoteType={setNoteType}
+                  language={language}
+                  setLanguage={setLanguage}
                 />
-                <p>Stop Recording</p>
               </>
             ) : (
-              <img
-                src="/microphone.svg"
-                className="min-w-9 min-h-9 size-9 text-white"
-              />
-            )}
-          </Button>
+              <div className="flex flex-row gap-8 mt-8">
+                {/* X Button: Reset recording */}
+                <button
+                  className="size-10 bg-[#FFEEEE] p-2.5 rounded-xl cursor-pointer"
+                  onClick={resetRecording}
+                  type="button"
+                  aria-label="Reset recording"
+                >
+                  <img src="/X.svg" className="size-5 min-w-5" />
+                </button>
 
-          {!recording && (
-            <div className="w-full flex flex-col py-3 px-5 border-t border-gray-200">
-              {isMinutesLoading ? (
-                <span className="text-sm text-[#4a5565]">Loading...</span>
+                <div className="flex flex-col gap-1">
+                  <p className="text-base text-center text-[#364153]">
+                    {formatTime(duration)}
+                  </p>
+                  <AudioWaveform analyserNode={analyserNode} />
+                </div>
+
+                {/* Pause/Resume Button */}
+                {paused ? (
+                  <button
+                    className="size-10 bg-[#1E2939] p-2.5 rounded-xl cursor-pointer"
+                    onClick={resumeRecording}
+                    type="button"
+                    aria-label="Resume recording"
+                  >
+                    <img src="/microphone.svg" className="size-5 min-w-5" />
+                  </button>
+                ) : (
+                  <button
+                    className="size-10 bg-[#1E2939] p-2.5 rounded-xl cursor-pointer"
+                    onClick={pauseRecording}
+                    type="button"
+                    aria-label="Pause recording"
+                  >
+                    <img src="/pause.svg" className="size-5 min-w-5" />
+                  </button>
+                )}
+              </div>
+            )}
+
+            <Button
+              className={cn(
+                recording ? "bg-[#6D1414]" : "bg-[#101828]",
+                "w-[352px] h-[86px] rounded-xl flex flex-row gap-3 items-center justify-center my-5"
+              )}
+              onClick={recording ? stopRecording : startRecording}
+              disabled={isProcessing}
+            >
+              {recording ? (
+                <>
+                  <img
+                    src="/stop.svg"
+                    className="min-w-7 min-h-7 size-7 text-white"
+                  />
+                  <p>Stop Recording</p>
+                </>
               ) : (
-                <RecordingMinutesLeft
-                  minutesLeft={isBYOK ? Infinity : minutesData?.remaining ?? 0}
+                <img
+                  src="/microphone.svg"
+                  className="min-w-9 min-h-9 size-9 text-white"
                 />
               )}
-              {/* No Save button, processing is automatic */}
-            </div>
-          )}
-        </div>
+            </Button>
+
+            {!recording && (
+              <div className="w-full flex flex-col py-3 px-5 border-t border-gray-200">
+                {isMinutesLoading ? (
+                  <span className="text-sm text-[#4a5565]">Loading...</span>
+                ) : (
+                  <RecordingMinutesLeft
+                    minutesLeft={
+                      isBYOK ? Infinity : minutesData?.remaining ?? 0
+                    }
+                  />
+                )}
+                {/* No Save button, processing is automatic */}
+              </div>
+            )}
+          </div>
+        )}
       </DialogContent>
     </Dialog>
   );

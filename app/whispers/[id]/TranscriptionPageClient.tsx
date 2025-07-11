@@ -7,6 +7,8 @@ import { formatWhisperTimestamp } from "@/lib/utils";
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { TransformDropdown } from "@/components/TransformDropdown";
+import { toast } from "sonner";
+import { AutosizeTextarea } from "@/components/ui/AutoSizeTextArea";
 
 export default function TranscriptionPageClient({ id }: { id: string }) {
   const router = useRouter();
@@ -75,19 +77,25 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
               if (titleDebounceTimeout.current)
                 clearTimeout(titleDebounceTimeout.current);
               titleDebounceTimeout.current = setTimeout(() => {
-                titleMutation.mutate({ id, title: value });
+                titleMutation.mutate(
+                  { id, title: value },
+                  {
+                    onSuccess: () => {
+                      toast.success("Title saved!", { id: "title-save" });
+                    },
+                    onError: () => {
+                      toast.error("Failed to save title.", {
+                        id: "title-save",
+                      });
+                    },
+                  }
+                );
               }, 500);
             }}
             aria-label="Edit title"
             spellCheck={true}
-            style={{
-              background:
-                titleMutation.status === "pending" ? "#f3f4f6" : undefined,
-            }}
+            disabled={titleMutation.status === "pending"}
           />
-          {titleMutation.status === "pending" && (
-            <div className="text-xs text-blue-500 mt-1">Saving...</div>
-          )}
           <div className="text-xs text-muted-foreground">
             Last edited: {new Date(whisper.createdAt).toLocaleDateString()} –{" "}
             {new Date(whisper.createdAt).toLocaleTimeString([], {
@@ -100,7 +108,7 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
       </header>
       <main className="py-8 mx-auto max-w-[688px] w-full">
         <div className="mb-6">
-          <textarea
+          <AutosizeTextarea
             className="whitespace-pre-line rounded p-2 min-h-[120px] w-full focus:outline-none resize-vertical"
             value={editableTranscription}
             onChange={(e) => {
@@ -109,19 +117,27 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
               if (debounceTimeout.current)
                 clearTimeout(debounceTimeout.current);
               debounceTimeout.current = setTimeout(() => {
-                trpcMutation.mutate({ id, fullTranscription: value });
+                trpcMutation.mutate(
+                  { id, fullTranscription: value },
+                  {
+                    onSuccess: () => {
+                      toast.success("Transcription saved!", {
+                        id: "transcription-save",
+                      });
+                    },
+                    onError: () => {
+                      toast.error("Failed to save transcription.", {
+                        id: "transcription-save",
+                      });
+                    },
+                  }
+                );
               }, 500);
             }}
             spellCheck={true}
             aria-label="Edit transcription"
-            style={{
-              background:
-                trpcMutation.status === "pending" ? "#f3f4f6" : undefined,
-            }}
+            disabled={trpcMutation.status === "pending"}
           />
-          {trpcMutation.status === "pending" && (
-            <div className="text-xs text-blue-500 mt-1">Saving...</div>
-          )}
         </div>
         <div>
           <h2 className="text-lg font-medium mb-2">Audio Tracks used RAW</h2>

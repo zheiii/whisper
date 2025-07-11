@@ -23,6 +23,7 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
   const [noteType, setNoteType] = useState("quick-note");
   const [language, setLanguage] = useLocalStorage("language", "en-US");
 
+  const [isUploadingFile, setIsUploadingFile] = useState(false);
   const [isDragActive, setIsDragActive] = useState(false);
   const { uploadToS3 } = useS3Upload();
   const router = useRouter();
@@ -45,6 +46,7 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
         );
         return;
       }
+      setIsUploadingFile(true);
       try {
         // Upload to S3
         const { url } = await uploadToS3(file);
@@ -72,77 +74,95 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
         <DialogHeader className="p-0">
           <DialogTitle className="sr-only">Upload Voice Audio</DialogTitle>
         </DialogHeader>
-        <RecordingBasics
-          noteType={noteType}
-          setNoteType={setNoteType}
-          language={language}
-          setLanguage={setLanguage}
-        />
-        <Dropzone
-          multiple={false}
-          accept={{
-            // MP3 audio
-            "audio/mpeg3": [".mp3"],
-            "audio/x-mpeg-3": [".mp3"],
-            // WAV audio
-            "audio/wav": [".wav"],
-            "audio/x-wav": [".wav"],
-            "audio/wave": [".wav"],
-            "audio/x-pn-wav": [".wav"],
-            // iPhone voice notes (M4A)
-            "audio/mp4": [".m4a"],
-            "audio/m4a": [".m4a"],
-            "audio/x-m4a": [".m4a"],
-          }}
-          onDrop={handleDrop}
-          onDragEnter={() => setIsDragActive(true)}
-          onDragLeave={() => setIsDragActive(false)}
-          onDropAccepted={() => setIsDragActive(false)}
-          onDropRejected={() => setIsDragActive(false)}
-        >
-          {({ getRootProps, getInputProps }) => (
-            <div
-              {...getRootProps()}
-              className="flex flex-col justify-start items-start relative overflow-hidden bg-white cursor-pointer"
+
+        {isUploadingFile ? (
+          <div className="flex flex-col items-center justify-center h-full gap-4 p-4">
+            <img
+              src="/loading.svg"
+              alt="Loading"
+              className="w-8 h-8 animate-spin"
+            />
+            <p className="text-gray-500">
+              Uploading audio recording
+              <span className="animate-pulse">...</span>
+            </p>
+          </div>
+        ) : (
+          <>
+            <RecordingBasics
+              noteType={noteType}
+              setNoteType={setNoteType}
+              language={language}
+              setLanguage={setLanguage}
+              disabled={isUploadingFile}
+            />
+            <Dropzone
+              multiple={false}
+              accept={{
+                // MP3 audio
+                "audio/mpeg3": [".mp3"],
+                "audio/x-mpeg-3": [".mp3"],
+                // WAV audio
+                "audio/wav": [".wav"],
+                "audio/x-wav": [".wav"],
+                "audio/wave": [".wav"],
+                "audio/x-pn-wav": [".wav"],
+                // iPhone voice notes (M4A)
+                "audio/mp4": [".m4a"],
+                "audio/m4a": [".m4a"],
+                "audio/x-m4a": [".m4a"],
+              }}
+              onDrop={handleDrop}
+              onDragEnter={() => setIsDragActive(true)}
+              onDragLeave={() => setIsDragActive(false)}
+              onDropAccepted={() => setIsDragActive(false)}
+              onDropRejected={() => setIsDragActive(false)}
             >
-              <input {...getInputProps()} />
-              <div className="relative bg-white p-5 w-full">
-                <div className="relative overflow-hidden rounded-xl bg-gray-100 border-2 border-[#d1d5dc] border-dashed min-h-[86px] flex justify-center items-center flex-col gap-1">
-                  <div className="flex justify-center items-center relative gap-2.5 px-3 py-2 rounded-lg bg-[#101828]">
-                    <img
-                      src="/uploadWhite.svg"
-                      className="size-[18px] min-w-[18px]"
-                    />
-                    <p className="text-base font-semibold text-left text-white">
-                      Upload a Recording
-                    </p>
-                  </div>
-                  <p className="text-xs text-center text-[#4a5565]">
-                    Or drag‑and‑drop here
-                  </p>
-                  {isDragActive && (
-                    <div className="absolute inset-0 bg-blue-100 bg-opacity-50 flex items-center justify-center z-10 pointer-events-none">
-                      <span className="text-blue-700 font-semibold">
-                        Drop audio file here
-                      </span>
+              {({ getRootProps, getInputProps }) => (
+                <div
+                  {...getRootProps()}
+                  className="flex flex-col justify-start items-start relative overflow-hidden bg-white cursor-pointer"
+                >
+                  <input {...getInputProps()} />
+                  <div className="relative bg-white p-5 w-full">
+                    <div className="relative overflow-hidden rounded-xl bg-gray-100 border-2 border-[#d1d5dc] border-dashed min-h-[86px] flex justify-center items-center flex-col gap-1">
+                      <div className="flex justify-center items-center relative gap-2.5 px-3 py-2 rounded-lg bg-[#101828]">
+                        <img
+                          src="/uploadWhite.svg"
+                          className="size-[18px] min-w-[18px]"
+                        />
+                        <p className="text-base font-semibold text-left text-white">
+                          Upload a Recording
+                        </p>
+                      </div>
+                      <p className="text-xs text-center text-[#4a5565]">
+                        Or drag‑and‑drop here
+                      </p>
+                      {isDragActive && (
+                        <div className="absolute inset-0 bg-blue-100 bg-opacity-50 flex items-center justify-center z-10 pointer-events-none">
+                          <span className="text-blue-700 font-semibold">
+                            Drop audio file here
+                          </span>
+                        </div>
+                      )}
                     </div>
-                  )}
+                  </div>
+                  <div className="relative overflow-hidden px-5 py-3 w-full border-t border-gray-200">
+                    {isMinutesLoading ? (
+                      <span className="text-sm text-[#4a5565]">Loading...</span>
+                    ) : (
+                      <RecordingMinutesLeft
+                        minutesLeft={
+                          isBYOK ? Infinity : minutesData?.remaining ?? 0
+                        }
+                      />
+                    )}
+                  </div>
                 </div>
-              </div>
-              <div className="relative overflow-hidden px-5 py-3 w-full border-t border-gray-200">
-                {isMinutesLoading ? (
-                  <span className="text-sm text-[#4a5565]">Loading...</span>
-                ) : (
-                  <RecordingMinutesLeft
-                    minutesLeft={
-                      isBYOK ? Infinity : minutesData?.remaining ?? 0
-                    }
-                  />
-                )}
-              </div>
-            </div>
-          )}
-        </Dropzone>
+              )}
+            </Dropzone>
+          </>
+        )}
       </DialogContent>
     </Dialog>
   );
