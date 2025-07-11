@@ -6,6 +6,7 @@ import { useQuery, useMutation } from "@tanstack/react-query";
 import { formatWhisperTimestamp } from "@/lib/utils";
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
+import { TransformDropdown } from "@/components/TransformDropdown";
 
 export default function TranscriptionPage() {
   const router = useRouter();
@@ -122,10 +123,7 @@ export default function TranscriptionPage() {
         </div>
       </main>
       <footer className="fixed bottom-0 left-0 w-full md:left-1/2 md:-translate-x-1/2 bg-white border-t md:border md:rounded-2xl border-slate-200 px-4 py-3 flex flex-col md:flex-row items-center z-50 max-w-[730px] gap-2 justify-center md:mb-4">
-        <button className="w-full md:max-w-[322px] max-w-md bg-slate-900 text-white py-2 rounded-lg font-semibold text-base flex items-center justify-center gap-2">
-          <img src="/sparkFull.svg" className="size-5 min-w-5 min-h-5" />
-          <span>Transform</span>
-        </button>
+        <TransformDropdown />
         <div className="flex gap-2 w-full md:flex-row max-w-md md:max-w-auto justify-between items-center">
           <button className="flex-1 py-2 rounded-lg border border-slate-200 bg-white text-[#364153] font-medium flex items-center justify-center gap-2">
             <img src="/microphoneFull.svg" className="size-5 min-w-5 min-h-5" />
