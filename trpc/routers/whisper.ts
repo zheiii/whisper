@@ -18,7 +18,10 @@ export const whisperRouter = t.router({
       id: w.id,
       title: w.title,
       content: w.fullTranscription,
-      preview: w.fullTranscription.slice(0, 80),
+      preview:
+        w.fullTranscription.length > 80
+          ? w.fullTranscription.slice(0, 80) + "..."
+          : w.fullTranscription,
       timestamp: w.createdAt.toISOString(),
       // duration: ... // If you want to add duration, you can extend the model or calculate from audioTracks
     }));
@@ -30,9 +33,22 @@ export const whisperRouter = t.router({
         whisperId: z.string().optional(),
         language: z.string().optional(),
         noteType: z.string().optional(),
+        durationSeconds: z.number().min(1),
       })
     )
     .mutation(async ({ input, ctx }) => {
+      // Enforce minutes limit
+      const minutes = Math.ceil(input.durationSeconds / 60);
+      const limitResult = await import("../../lib/limits").then((m) =>
+        m.limitMinutes({
+          clerkUserId: ctx.auth.userId,
+          isBringingKey: false,
+          minutes,
+        })
+      );
+      if (!limitResult.success) {
+        throw new Error("You have exceeded your daily audio minutes limit.");
+      }
       // 1. Call Fal Whisper
       fal.config({ credentials: process.env.FAL_KEY! });
       const result = await fal.subscribe("fal-ai/whisper", {

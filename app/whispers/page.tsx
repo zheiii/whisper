@@ -52,19 +52,9 @@ export default function WhispersPage() {
     })
   );
 
-  // Placeholder for add (should use mutation in future)
-  const handleAddTranscription = (transcription: Omit<Transcription, "id">) => {
-    // TODO: call tRPC mutation to create whisper
-  };
-
   if (isLoading) {
     return <Spinner />;
   }
 
-  return (
-    <Dashboard
-      transcriptions={transcriptions}
-      onAddTranscription={handleAddTranscription}
-    />
-  );
+  return <Dashboard transcriptions={transcriptions} />;
 }

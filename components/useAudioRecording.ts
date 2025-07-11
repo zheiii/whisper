@@ -3,7 +3,6 @@ import { useCallback, useEffect, useRef, useState } from "react";
 export function useAudioRecording() {
   const [recording, setRecording] = useState(false);
   const [paused, setPaused] = useState(false);
-  const [audioUrl, setAudioUrl] = useState<string | null>(null);
   const [duration, setDuration] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [analyserNode, setAnalyserNode] = useState<AnalyserNode | null>(null);
@@ -47,7 +46,6 @@ export function useAudioRecording() {
   const startRecording = useCallback(async () => {
     cleanup();
     setError(null);
-    setAudioUrl(null);
     setDuration(0);
     chunksRef.current = [];
     try {
@@ -74,7 +72,7 @@ export function useAudioRecording() {
       };
       mediaRecorder.onstop = () => {
         const blob = new Blob(chunksRef.current, { type: "audio/webm" });
-        setAudioUrl(URL.createObjectURL(blob));
+
         setAudioBlob(blob);
       };
       mediaRecorder.start();
@@ -132,7 +130,6 @@ export function useAudioRecording() {
     cleanup();
     setRecording(false);
     setPaused(false);
-    setAudioUrl(null);
     setAudioBlob(null);
     setDuration(0);
     setError(null);
@@ -149,7 +146,6 @@ export function useAudioRecording() {
   return {
     recording,
     paused,
-    audioUrl,
     audioBlob,
     analyserNode,
     duration,

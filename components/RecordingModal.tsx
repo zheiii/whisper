@@ -24,13 +24,6 @@ import { useMutation } from "@tanstack/react-query";
 
 interface RecordingModalProps {
   onClose: () => void;
-  onSave: (transcription: {
-    title: string;
-    content: string;
-    preview: string;
-    timestamp: string;
-    duration?: string;
-  }) => void;
   title?: string;
 }
 
@@ -42,7 +35,7 @@ declare global {
   }
 }
 
-export function RecordingModal({ onClose, onSave }: RecordingModalProps) {
+export function RecordingModal({ onClose }: RecordingModalProps) {
   const [noteType, setNoteType] = useState("quick-note");
   const [language, setLanguage] = useLocalStorage("language", "en-US");
 
@@ -125,6 +118,7 @@ export function RecordingModal({ onClose, onSave }: RecordingModalProps) {
         audioUrl: url,
         language,
         noteType,
+        durationSeconds: duration,
       });
       // Redirect to whisper page
       router.push(`/whispers/${id}`);

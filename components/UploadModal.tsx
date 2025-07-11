@@ -48,6 +48,18 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
       }
       setIsUploadingFile(true);
       try {
+        // Extract duration using Audio element
+        const getDuration = (file: File) =>
+          new Promise<number>((resolve, reject) => {
+            const audio = document.createElement("audio");
+            audio.preload = "metadata";
+            audio.onloadedmetadata = () => {
+              resolve(audio.duration);
+            };
+            audio.onerror = () => reject("Failed to load audio");
+            audio.src = URL.createObjectURL(file);
+          });
+        const duration = await getDuration(file);
         // Upload to S3
         const { url } = await uploadToS3(file);
         // Call tRPC mutation
@@ -55,6 +67,7 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
           audioUrl: url,
           language,
           noteType,
+          durationSeconds: Math.round(duration),
         });
         // Redirect to whisper page
         router.push(`/whispers/${id}`);

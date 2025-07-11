@@ -12,13 +12,9 @@ import Link from "next/link";
 
 interface DashboardProps {
   transcriptions: Transcription[];
-  onAddTranscription: (transcription: Omit<Transcription, "id">) => void;
 }
 
-export function Dashboard({
-  transcriptions,
-  onAddTranscription,
-}: DashboardProps) {
+export function Dashboard({ transcriptions }: DashboardProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [showRecordingModal, setShowRecordingModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
@@ -141,10 +137,7 @@ export function Dashboard({
 
       {/* Recording Modal */}
       {showRecordingModal && (
-        <RecordingModal
-          onClose={() => setShowRecordingModal(false)}
-          onSave={onAddTranscription}
-        />
+        <RecordingModal onClose={() => setShowRecordingModal(false)} />
       )}
 
       {/* Upload Modal */}
