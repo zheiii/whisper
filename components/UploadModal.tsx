@@ -19,6 +19,18 @@ import { useQuery } from "@tanstack/react-query";
 import { useTogetherApiKey } from "./TogetherApiKeyProvider";
 import useLocalStorage from "./useLocalStorage";
 
+// Move getDuration outside handleDrop
+const getDuration = (file: File) =>
+  new Promise<number>((resolve, reject) => {
+    const audio = document.createElement("audio");
+    audio.preload = "metadata";
+    audio.onloadedmetadata = () => {
+      resolve(audio.duration);
+    };
+    audio.onerror = () => reject("Failed to load audio");
+    audio.src = URL.createObjectURL(file);
+  });
+
 export function UploadModal({ onClose }: { onClose: () => void }) {
   const [noteType, setNoteType] = useState("quick-note");
   const [language, setLanguage] = useLocalStorage("language", "en-US");
@@ -48,20 +60,11 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
       }
       setIsUploadingFile(true);
       try {
-        // Extract duration using Audio element
-        const getDuration = (file: File) =>
-          new Promise<number>((resolve, reject) => {
-            const audio = document.createElement("audio");
-            audio.preload = "metadata";
-            audio.onloadedmetadata = () => {
-              resolve(audio.duration);
-            };
-            audio.onerror = () => reject("Failed to load audio");
-            audio.src = URL.createObjectURL(file);
-          });
-        const duration = await getDuration(file);
-        // Upload to S3
-        const { url } = await uploadToS3(file);
+        // Run duration extraction and S3 upload in parallel
+        const [duration, { url }] = await Promise.all([
+          getDuration(file),
+          uploadToS3(file),
+        ]);
         // Call tRPC mutation
         const { id } = await transcribeMutation.mutateAsync({
           audioUrl: url,
@@ -69,7 +72,6 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
           noteType,
           durationSeconds: Math.round(duration),
         });
-        // Redirect to whisper page
         router.push(`/whispers/${id}`);
       } catch (err) {
         toast.error("Failed to transcribe audio. Please try again.");

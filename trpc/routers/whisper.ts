@@ -153,4 +153,25 @@ export const whisperRouter = t.router({
       });
       return { id: updated.id, title: updated.title };
     }),
+  deleteWhisper: protectedProcedure
+    .input(z.object({ id: z.string() }))
+    .mutation(async ({ input, ctx }) => {
+      // Only allow the owner to delete
+      const whisper = await prisma.whisper.findUnique({
+        where: { id: input.id },
+      });
+      if (!whisper) throw new Error("Whisper not found");
+      if (whisper.userId !== ctx.auth.userId) throw new Error("Unauthorized");
+
+      // Delete all related AudioTracks first
+      await prisma.audioTrack.deleteMany({
+        where: { whisperId: input.id },
+      });
+
+      // Now delete the Whisper
+      await prisma.whisper.delete({
+        where: { id: input.id },
+      });
+      return { id: input.id };
+    }),
 });

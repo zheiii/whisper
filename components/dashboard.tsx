@@ -3,12 +3,21 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Search } from "lucide-react";
+import { MoreHorizontal, Search } from "lucide-react";
 import { RecordingModal } from "@/components/RecordingModal";
 import type { Transcription } from "@/app/page";
 import { UploadModal } from "./UploadModal";
 import { formatWhisperTimestamp } from "@/lib/utils";
 import Link from "next/link";
+import { Trash2 } from "lucide-react";
+import {
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
+import { useTRPC } from "@/trpc/client";
+import { useMutation } from "@tanstack/react-query";
 
 interface DashboardProps {
   transcriptions: Transcription[];
@@ -18,14 +27,44 @@ export function Dashboard({ transcriptions }: DashboardProps) {
   const [searchQuery, setSearchQuery] = useState("");
   const [showRecordingModal, setShowRecordingModal] = useState(false);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [localTranscriptions, setLocalTranscriptions] =
+    useState(transcriptions);
+  const trpc = useTRPC();
+  const deleteMutation = useMutation(
+    trpc.whisper.deleteWhisper.mutationOptions()
+  );
+
+  // Desktop detection (simple window width check)
+  const [isDesktop, setIsDesktop] = useState(false);
+  useEffect(() => {
+    const checkDesktop = () => setIsDesktop(window.innerWidth >= 768);
+    checkDesktop();
+    window.addEventListener("resize", checkDesktop);
+    return () => window.removeEventListener("resize", checkDesktop);
+  }, []);
 
   const filteredTranscriptions = searchQuery
-    ? transcriptions.filter(
+    ? localTranscriptions.filter(
         (t) =>
           t.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
           t.content.toLowerCase().includes(searchQuery.toLowerCase())
       )
-    : transcriptions;
+    : localTranscriptions;
+
+  const handleDelete = async (id: string) => {
+    if (!confirm("Are you sure you want to delete this Whisper?")) return;
+    // Optimistically remove from UI
+    setLocalTranscriptions((prev) => prev.filter((t) => t.id !== id));
+    try {
+      await deleteMutation.mutateAsync({ id });
+    } catch (err) {
+      // Rollback if error
+      setLocalTranscriptions(transcriptions);
+      alert(
+        "Failed to delete. You may not own this Whisper or there was a network error."
+      );
+    }
+  };
 
   const handleNewWhisper = () => {
     setShowRecordingModal(true);
@@ -88,24 +127,66 @@ export function Dashboard({ transcriptions }: DashboardProps) {
             </div>
           ) : (
             <div className="flex flex-col justify-start items-start relative space-y-4 mx-auto max-w-[727px]">
-              {filteredTranscriptions.map((transcription) => (
-                <Link
-                  href={`/whispers/${transcription.id}`}
-                  key={transcription.id}
-                  className="self-stretch flex-grow-0 flex-shrink-0 h-[121px] overflow-hidden group border-t-0 border-r-0 border-b-[0.7px] border-l-0 border-gray-200 md:border-[0.7px] md:border-transparent md:rounded-xl focus-within:bg-gray-50 focus-within:border-[#d1d5dc] hover:bg-gray-50 hover:border-[#d1d5dc] transition-all flex flex-col justify-between px-6 py-4"
-                  tabIndex={0}
-                >
-                  <p className="text-base font-medium text-left text-[#101828] mb-2">
-                    {transcription.title}
-                  </p>
-                  <p className="text-sm text-left text-[#4a5565] mb-4 line-clamp-2">
-                    {transcription.preview}
-                  </p>
-                  <p className="text-xs text-left text-[#99a1af] mt-auto">
-                    {formatWhisperTimestamp(transcription.timestamp)}
-                  </p>
-                </Link>
-              ))}
+              {filteredTranscriptions.map((transcription) =>
+                isDesktop ? (
+                  <div key={transcription.id} className="relative w-full">
+                    <Link
+                      href={`/whispers/${transcription.id}`}
+                      className="self-stretch flex-grow-0 flex-shrink-0 h-[121px] overflow-hidden group border-t-0 border-r-0 border-b-[0.7px] border-l-0 border-gray-200 md:border-[0.7px] md:border-transparent md:rounded-xl focus-within:bg-gray-50 focus-within:border-[#d1d5dc] hover:bg-gray-50 hover:border-[#d1d5dc] transition-all flex flex-col justify-between px-6 py-4 pr-14"
+                      tabIndex={0}
+                    >
+                      <p className="text-base font-medium text-left text-[#101828] mb-2">
+                        {transcription.title}
+                      </p>
+                      <p className="text-sm text-left text-[#4a5565] mb-4 line-clamp-2">
+                        {transcription.preview}
+                      </p>
+                      <p className="text-xs text-left text-[#99a1af] mt-auto">
+                        {formatWhisperTimestamp(transcription.timestamp)}
+                      </p>
+                    </Link>
+                    <div className="absolute top-4 right-6 z-10">
+                      <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                          <button
+                            className="p-2 cursor-pointer rounded-md bg-transparent hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
+                            aria-label="More actions"
+                            onClick={(e) => e.stopPropagation()}
+                          >
+                            <MoreHorizontal className="w-5 h-5 text-gray-500" />
+                          </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                          <DropdownMenuItem
+                            variant="destructive"
+                            onClick={() => handleDelete(transcription.id)}
+                          >
+                            <Trash2 className="w-4 h-4 text-red-600" />
+                            <span>Delete</span>
+                          </DropdownMenuItem>
+                        </DropdownMenuContent>
+                      </DropdownMenu>
+                    </div>
+                  </div>
+                ) : (
+                  <Link
+                    href={`/whispers/${transcription.id}`}
+                    key={transcription.id}
+                    className="self-stretch flex-grow-0 flex-shrink-0 h-[121px] overflow-hidden group border-t-0 border-r-0 border-b-[0.7px] border-l-0 border-gray-200 md:border-[0.7px] md:border-transparent md:rounded-xl focus-within:bg-gray-50 focus-within:border-[#d1d5dc] hover:bg-gray-50 hover:border-[#d1d5dc] transition-all flex flex-col justify-between px-6 py-4"
+                    tabIndex={0}
+                  >
+                    <p className="text-base font-medium text-left text-[#101828] mb-2">
+                      {transcription.title}
+                    </p>
+                    <p className="text-sm text-left text-[#4a5565] mb-4 line-clamp-2">
+                      {transcription.preview}
+                    </p>
+                    <p className="text-xs text-left text-[#99a1af] mt-auto">
+                      {formatWhisperTimestamp(transcription.timestamp)}
+                    </p>
+                  </Link>
+                )
+              )}
             </div>
           )}
         </div>
