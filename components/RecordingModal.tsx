@@ -44,7 +44,6 @@ export function RecordingModal({ onClose }: RecordingModalProps) {
   const {
     recording,
     paused,
-    audioUrl,
     audioBlob,
     analyserNode,
     duration,

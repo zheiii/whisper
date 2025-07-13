@@ -30,8 +30,8 @@ export default function RootLayout({
   // Place a ClientHeader component below
   return (
     <ClerkProvider>
-      <TRPCReactProvider>
-        <TogetherApiKeyProvider>
+      <TogetherApiKeyProvider>
+        <TRPCReactProvider>
           <html lang="en">
             <body className={`${raleway.variable} antialiased`}>
               <div className="min-h-screen bg-white">
@@ -41,8 +41,8 @@ export default function RootLayout({
               </div>
             </body>
           </html>
-        </TogetherApiKeyProvider>
-      </TRPCReactProvider>
+        </TRPCReactProvider>
+      </TogetherApiKeyProvider>
     </ClerkProvider>
   );
 }

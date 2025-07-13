@@ -16,10 +16,19 @@ const isLocal = process.env.NODE_ENV !== "production";
 const MINUTES_LIMIT_DEFAULT = 120;
 const TRANSFORM_LIMIT_DEFAULT = 10;
 const WINDOW = "1440 m"; // 1 day
-const WINDOW_SECONDS = 60 * 60 * 24; // 1 day in seconds
+
+// Minutes per day limiters
+const minutesLimiter =
+  !isLocal && redis
+    ? new Ratelimit({
+        redis: redis,
+        limiter: Ratelimit.fixedWindow(MINUTES_LIMIT_DEFAULT, WINDOW),
+        analytics: true,
+      })
+    : undefined;
 
 // Transformations per day limiters
-const transformLimiterDefault =
+const transformLimiter =
   !isLocal && redis
     ? new Ratelimit({
         redis: redis,
@@ -84,28 +93,13 @@ export async function limitMinutes({
   if (isTogetherUser(email)) {
     return fallbackMinutes;
   }
-  if (!clerkUserId || !redis) {
+  if (!clerkUserId || !minutesLimiter) {
     return fallbackMinutes;
   }
-  const limit = MINUTES_LIMIT_DEFAULT;
-  const key = clerkUserId;
-  // Atomically increment and set expiry if new
-  const current = await redis.eval(
-    [
-      "local v = redis.call('INCRBY', KEYS[1], ARGV[1])",
-      "if v == tonumber(ARGV[1]) then redis.call('EXPIRE', KEYS[1], ARGV[2]) end",
-      "return v",
-    ].join("; "),
-    [key],
-    [minutes, WINDOW_SECONDS]
-  );
-  const remaining = Math.max(0, limit - Number(current));
-  return {
-    success: Number(current) <= limit,
-    remaining,
-    limit,
-    reset: null, // Optionally, calculate reset time
-  };
+
+  return await minutesLimiter.limit(clerkUserId, {
+    rate: minutes,
+  });
 }
 
 export async function getMinutes({
@@ -122,19 +116,10 @@ export async function getMinutes({
   if (isTogetherUser(email)) {
     return fallbackMinutes;
   }
-  if (!clerkUserId || !redis) {
+  if (!clerkUserId || !minutesLimiter) {
     return fallbackMinutes;
   }
-  const limit = MINUTES_LIMIT_DEFAULT;
-  const key = clerkUserId;
-  const current = Number((await redis.get(key)) || 0);
-  const remaining = Math.max(0, limit - current);
-  return {
-    success: current < limit,
-    remaining,
-    limit,
-    reset: null, // Optionally, calculate reset time
-  };
+  return minutesLimiter.getRemaining(clerkUserId);
 }
 
 export async function limitTransformations({
@@ -151,21 +136,11 @@ export async function limitTransformations({
   if (isTogetherUser(email)) {
     return fallbackTransform;
   }
-  if (!clerkUserId) {
+  if (!clerkUserId || !transformLimiter) {
     return fallbackTransform;
   }
-  const limiter = transformLimiterDefault;
-  if (!limiter) {
-    return fallbackTransform;
-  }
-  const key = clerkUserId;
-  const result = await limiter.limit(key);
-  return {
-    success: result.success,
-    remaining: result.remaining,
-    limit: result.limit,
-    reset: result.reset,
-  };
+
+  return await transformLimiter.limit(clerkUserId);
 }
 
 export async function getTransformations({
@@ -182,16 +157,12 @@ export async function getTransformations({
   if (isTogetherUser(email)) {
     return fallbackTransform;
   }
-  if (!clerkUserId) {
+  if (!clerkUserId || !transformLimiter) {
     return fallbackTransform;
   }
-  const limiter = transformLimiterDefault;
-  if (!limiter) {
-    return fallbackTransform;
-  }
-  const key = clerkUserId;
+
   try {
-    const result = await limiter.getRemaining(key);
+    const result = await transformLimiter.getRemaining(clerkUserId);
     return result;
   } catch {
     return fallbackTransform;

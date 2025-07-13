@@ -3,9 +3,10 @@ import type { QueryClient } from "@tanstack/react-query";
 import { QueryClientProvider } from "@tanstack/react-query";
 import { createTRPCClient, httpBatchLink } from "@trpc/client";
 import { createTRPCContext } from "@trpc/tanstack-react-query";
-import { useState } from "react";
+import { useMemo } from "react";
 import { makeQueryClient } from "./query-client";
 import type { AppRouter } from "./routers/_app";
+import { useTogetherApiKey } from "../components/TogetherApiKeyProvider";
 
 export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
 
@@ -35,15 +36,21 @@ export function TRPCReactProvider(
   }>
 ) {
   const queryClient = getQueryClient();
-  const [trpcClient] = useState(() =>
-    createTRPCClient<AppRouter>({
-      links: [
-        httpBatchLink({
-          // transformer: superjson, // Uncomment if you use superjson
-          url: getUrl(),
-        }),
-      ],
-    })
+  const { apiKey } = useTogetherApiKey();
+  const trpcClient = useMemo(
+    () =>
+      createTRPCClient<AppRouter>({
+        links: [
+          httpBatchLink({
+            // transformer: superjson, // Uncomment if you use superjson
+            url: getUrl(),
+            headers: () => {
+              return apiKey ? { TogetherAPIToken: apiKey } : {};
+            },
+          }),
+        ],
+      }),
+    [apiKey]
   );
   return (
     <QueryClientProvider client={queryClient}>

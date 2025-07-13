@@ -4,6 +4,7 @@ import { PrismaClient } from "../../lib/generated/prisma";
 import { fal } from "@fal-ai/client";
 import { v4 as uuidv4 } from "uuid";
 import { protectedProcedure } from "../init";
+import { limitMinutes } from "@/lib/limits";
 
 const prisma = new PrismaClient();
 
@@ -39,13 +40,15 @@ export const whisperRouter = t.router({
     .mutation(async ({ input, ctx }) => {
       // Enforce minutes limit
       const minutes = Math.ceil(input.durationSeconds / 60);
-      const limitResult = await import("../../lib/limits").then((m) =>
-        m.limitMinutes({
-          clerkUserId: ctx.auth.userId,
-          isBringingKey: false,
-          minutes,
-        })
-      );
+
+      console.log("decreasing of minutes", minutes);
+
+      const limitResult = await limitMinutes({
+        clerkUserId: ctx.auth.userId,
+        isBringingKey: !!ctx.togetherApiKey,
+        minutes,
+      });
+
       if (!limitResult.success) {
         throw new Error("You have exceeded your daily audio minutes limit.");
       }
