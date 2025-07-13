@@ -14,7 +14,7 @@ export function TransformDropdown() {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
-        <button className="w-full md:max-w-[322px] max-w-md bg-slate-900 text-white py-2 rounded-lg font-semibold text-base flex items-center justify-center gap-2">
+        <button className="w-full md:max-w-[322px] max-w-md bg-slate-900 text-white py-2 rounded-lg font-semibold text-base flex items-center justify-center gap-2 cursor-pointer">
           <img src="/sparkFull.svg" className="size-5 min-w-5 min-h-5" />
           <span>Transform</span>
         </button>

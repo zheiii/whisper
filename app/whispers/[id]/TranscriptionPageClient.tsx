@@ -13,6 +13,7 @@ import { AutosizeTextarea } from "@/components/ui/AutoSizeTextArea";
 export default function TranscriptionPageClient({ id }: { id: string }) {
   const router = useRouter();
   const trpc = useTRPC();
+  const [showContinueModal, setShowContinueModal] = useState(false);
 
   const {
     data: whisper,
@@ -154,7 +155,12 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
       <footer className="fixed bottom-0 left-0 w-full md:left-1/2 md:-translate-x-1/2 bg-white border-t md:border md:rounded-2xl border-slate-200 px-4 py-3 flex flex-col md:flex-row items-center z-50 max-w-[730px] gap-2 justify-center md:mb-4">
         <TransformDropdown />
         <div className="flex gap-2 w-full md:flex-row max-w-md md:max-w-auto justify-between items-center">
-          <button className="flex-1 py-2 rounded-lg border border-slate-200 bg-white text-[#364153] font-medium flex items-center justify-center gap-2">
+          <button
+            className="flex-1 py-2 rounded-lg border border-slate-200 bg-white text-[#364153] font-medium flex items-center justify-center gap-2 cursor-pointer"
+            onClick={() => {
+              setShowContinueModal(true);
+            }}
+          >
             <img src="/microphoneFull.svg" className="size-5 min-w-5 min-h-5" />
             <span>Continue</span>
           </button>
