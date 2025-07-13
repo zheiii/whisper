@@ -24,6 +24,7 @@ const minutesLimiter =
         redis: redis,
         limiter: Ratelimit.fixedWindow(MINUTES_LIMIT_DEFAULT, WINDOW),
         analytics: true,
+        prefix: "minutes-limiter",
       })
     : undefined;
 
@@ -34,6 +35,7 @@ const transformLimiter =
         redis: redis,
         limiter: Ratelimit.fixedWindow(TRANSFORM_LIMIT_DEFAULT, WINDOW),
         analytics: true,
+        prefix: "transform-limiter",
       })
     : undefined;
 
@@ -87,6 +89,7 @@ export async function limitMinutes({
   minutes: number;
 }) {
   const email = await getUserEmail(clerkUserId);
+
   if (isBringingKey) {
     return fallbackMinutesByok;
   }
