@@ -1,14 +1,12 @@
 import { t } from "../init";
 import { z } from "zod";
 import { PrismaClient } from "../../lib/generated/prisma";
-import { fal } from "@fal-ai/client";
 import { v4 as uuidv4 } from "uuid";
 import { protectedProcedure } from "../init";
-import { limitMinutes, limitTransformations } from "@/lib/limits";
-import { togetheraiClientWithKey, upstashWorkflow } from "@/lib/apiClients";
+import { limitMinutes } from "@/lib/limits";
+import { fal } from "@fal-ai/client";
+import { togetherBaseClientWithKey } from "@/lib/apiClients";
 import { doTransformation } from "@/lib/transformation";
-import { generateText } from "ai";
-import { TransformWorkflowPayload } from "@/app/api/transform/route";
 
 const prisma = new PrismaClient();
 
@@ -56,15 +54,29 @@ export const whisperRouter = t.router({
       if (!limitResult.success) {
         throw new Error("You have exceeded your daily audio minutes limit.");
       }
-      // 1. Call Fal Whisper
-      fal.config({ credentials: process.env.FAL_KEY! });
-      const result = await fal.subscribe("fal-ai/whisper", {
-        input: {
-          audio_url: input.audioUrl,
-          language: (input.language as any) || undefined,
-        },
+
+      // fal.config({ credentials: process.env.FAL_KEY! });
+      // const result = await fal.subscribe("fal-ai/whisper", {
+      //   input: {
+      //     audio_url: input.audioUrl,
+      //     language: (input.language as any) || undefined,
+      //   },
+      // });
+      // const transcription = result.data.text as string;
+
+      const res = await togetherBaseClientWithKey(
+        ctx.togetherApiKey
+      ).audio.transcriptions.create({
+        // @ts-ignore: Together API accepts file URL as string, even if types do not allow
+        file: input.audioUrl,
+        model: "openai/whisper-large-v3",
+        language: input.language || "en",
       });
-      const transcription = result.data.text as string;
+
+      console.log("res", res);
+
+      const transcription = res.text as string;
+
       // Generate a title from the transcription (first 8 words or fallback)
       const title = transcription
         ? transcription.split(" ").slice(0, 8).join(" ") +
@@ -116,15 +128,9 @@ export const whisperRouter = t.router({
         });
       }
 
-      // If noteType is present, create a transformation and trigger workflow
+      // If noteType is present, create a transformation
       if (input.noteType) {
-        await doTransformation({
-          whisperId,
-          typeName: input.noteType,
-          userId: ctx.auth.userId,
-          apiKey: ctx.togetherApiKey,
-          prisma,
-        });
+        // TODO add back logic here?
       }
       return { id: whisperId };
     }),
@@ -134,6 +140,7 @@ export const whisperRouter = t.router({
       const whisper = await prisma.whisper.findUnique({
         where: { id: input.id },
         include: {
+          audioTracks: true,
           transformations: { orderBy: { createdAt: "asc" } },
         },
       });
@@ -208,23 +215,10 @@ export const whisperRouter = t.router({
       if (!whisper) throw new Error("Whisper not found");
       if (whisper.userId !== ctx.auth.userId) throw new Error("Unauthorized");
 
-      try {
-        const transformation = await doTransformation({
-          whisperId: input.id,
-          typeName: input.typeName,
-          userId: ctx.auth.userId,
-          apiKey: ctx.togetherApiKey,
-          prisma,
-        });
-        return {
-          id: transformation.id,
-          isGenerating: transformation.isGenerating,
-          typeName: transformation.typeName,
-          text: transformation.text,
-          createdAt: transformation.createdAt,
-        };
-      } catch (e) {
-        throw e;
-      }
+      return doTransformation({
+        whisperId: input.id,
+        typeName: input.typeName,
+        userId: ctx.auth.userId,
+      });
     }),
 });
