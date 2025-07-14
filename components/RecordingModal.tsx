@@ -66,6 +66,7 @@ export function RecordingModal({ onClose }: RecordingModalProps) {
   );
 
   const [isProcessing, setIsProcessing] = useState(false);
+  const [pendingSave, setPendingSave] = useState(false);
 
   // Check microphone permission on mount
   useEffect(() => {
@@ -111,6 +112,14 @@ export function RecordingModal({ onClose }: RecordingModalProps) {
       setIsProcessing(false);
     }
   };
+
+  // Wait for audioBlob to be set after stopping before saving
+  useEffect(() => {
+    if (pendingSave && audioBlob) {
+      setPendingSave(false);
+      handleSaveRecording();
+    }
+  }, [pendingSave, audioBlob]);
 
   return (
     <Dialog open onOpenChange={onClose}>
@@ -198,7 +207,7 @@ export function RecordingModal({ onClose }: RecordingModalProps) {
               onClick={async () => {
                 if (recording) {
                   stopRecording();
-                  await handleSaveRecording();
+                  setPendingSave(true);
                 } else {
                   startRecording();
                 }
