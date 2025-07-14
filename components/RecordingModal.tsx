@@ -12,7 +12,6 @@ import { cn } from "@/lib/utils";
 import { RecordingBasics } from "./RecordingBasics";
 import { useTRPC } from "@/trpc/client";
 import { RecordingMinutesLeft } from "./RecordingMinutesLeft";
-import { useQuery } from "@tanstack/react-query";
 import { useTogetherApiKey } from "./TogetherApiKeyProvider";
 import useLocalStorage from "./hooks/useLocalStorage";
 import { AudioWaveform } from "./AudioWaveform";
@@ -48,7 +47,6 @@ export function RecordingModal({ onClose }: RecordingModalProps) {
     audioBlob,
     analyserNode,
     duration,
-    error,
     startRecording,
     stopRecording,
     pauseRecording,
@@ -68,7 +66,6 @@ export function RecordingModal({ onClose }: RecordingModalProps) {
   );
 
   const [isProcessing, setIsProcessing] = useState(false);
-  const [hasTriggeredUpload, setHasTriggeredUpload] = useState(false);
 
   // Check microphone permission on mount
   useEffect(() => {
@@ -81,18 +78,6 @@ export function RecordingModal({ onClose }: RecordingModalProps) {
         });
     }
   }, []);
-
-  // Automatically upload and transcribe after recording stops
-  useEffect(() => {
-    if (!recording && audioBlob && !isProcessing && !hasTriggeredUpload) {
-      setHasTriggeredUpload(true);
-      handleSaveRecording();
-    }
-    // Reset trigger if user records again
-    if (recording && hasTriggeredUpload) {
-      setHasTriggeredUpload(false);
-    }
-  }, [recording, audioBlob, isProcessing, hasTriggeredUpload]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -176,7 +161,10 @@ export function RecordingModal({ onClose }: RecordingModalProps) {
                   <p className="text-base text-center text-[#364153]">
                     {formatTime(duration)}
                   </p>
-                  <AudioWaveform analyserNode={analyserNode} />
+                  <AudioWaveform
+                    analyserNode={analyserNode}
+                    isPaused={paused}
+                  />
                 </div>
 
                 {/* Pause/Resume Button */}
@@ -207,7 +195,14 @@ export function RecordingModal({ onClose }: RecordingModalProps) {
                 recording ? "bg-[#6D1414]" : "bg-[#101828]",
                 "w-[352px] h-[86px] rounded-xl flex flex-row gap-3 items-center justify-center my-5"
               )}
-              onClick={recording ? stopRecording : startRecording}
+              onClick={async () => {
+                if (recording) {
+                  stopRecording();
+                  await handleSaveRecording();
+                } else {
+                  startRecording();
+                }
+              }}
               disabled={isProcessing}
             >
               {recording ? (

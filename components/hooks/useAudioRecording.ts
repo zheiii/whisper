@@ -111,6 +111,10 @@ export function useAudioRecording() {
     ) {
       mediaRecorderRef.current.pause();
       setPaused(true);
+      if (timerRef.current) {
+        clearInterval(timerRef.current);
+        timerRef.current = null;
+      }
     }
   }, []);
 
@@ -122,6 +126,11 @@ export function useAudioRecording() {
     ) {
       mediaRecorderRef.current.resume();
       setPaused(false);
+      if (!timerRef.current) {
+        timerRef.current = setInterval(() => {
+          setDuration((d) => d + 1);
+        }, 1000);
+      }
     }
   }, []);
 

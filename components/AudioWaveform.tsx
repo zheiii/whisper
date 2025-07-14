@@ -24,9 +24,10 @@ export function clamp(value: number, min: number, max: number): number {
 
 interface AudioWaveformProps {
   analyserNode: AnalyserNode | null;
+  isPaused: boolean;
 }
 
-export function AudioWaveform({ analyserNode }: AudioWaveformProps) {
+export function AudioWaveform({ analyserNode, isPaused }: AudioWaveformProps) {
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
   const barsContainerRef = useRef<HTMLDivElement | null>(null);
 
@@ -83,7 +84,11 @@ export function AudioWaveform({ analyserNode }: AudioWaveformProps) {
           key={index}
           className={clsx(
             "w-[2px]",
-            amplitude >= 0 ? "bg-gray-600" : "bg-gray-200"
+            isPaused
+              ? "bg-gray-100"
+              : amplitude >= 0
+              ? "bg-gray-600"
+              : "bg-gray-200"
           )}
           style={{
             height: `${clamp(amplitude * scalingFactor, 2, 32)}px`,
