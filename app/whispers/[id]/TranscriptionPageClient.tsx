@@ -138,6 +138,11 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
       id,
       typeName,
     });
+    // Invalidate transformation limits
+    await queryClient.invalidateQueries({
+      queryKey: trpc.limit.getTransformationsLeft.queryKey(),
+    });
+
     // Add to pending
     setPendingTransformations((prev) => [
       ...prev,
@@ -295,20 +300,6 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
         ) : (
           <div className="mb-6">{renderTranscription()}</div>
         )}
-        <div>
-          <h2 className="text-lg font-medium mb-2">Audio Tracks used RAW</h2>
-          <ul>
-            {whisper?.audioTracks.map((track: any) => (
-              <li key={track.id} className="mb-4">
-                <audio controls src={track.fileUrl} className="w-full mb-1" />
-                <div className="text-xs text-muted-foreground">
-                  {formatWhisperTimestamp(track.createdAt)}
-                </div>
-                <div className="text-sm">{track.partialTranscription}</div>
-              </li>
-            ))}
-          </ul>
-        </div>
       </main>
       <footer className="fixed bottom-0 left-0 w-full md:left-1/2 md:-translate-x-1/2 bg-white border-t md:border md:rounded-2xl border-slate-200 px-4 py-3 flex flex-col md:flex-row items-center z-50 max-w-[730px] gap-2 justify-center md:mb-4">
         <TransformDropdown onTransform={handleTransform} />

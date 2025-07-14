@@ -14,13 +14,14 @@ import { useTRPC } from "@/trpc/client";
 import { RecordingMinutesLeft } from "./RecordingMinutesLeft";
 import { useQuery } from "@tanstack/react-query";
 import { useTogetherApiKey } from "./TogetherApiKeyProvider";
-import useLocalStorage from "./useLocalStorage";
+import useLocalStorage from "./hooks/useLocalStorage";
 import { AudioWaveform } from "./AudioWaveform";
-import { useAudioRecording } from "./useAudioRecording";
+import { useAudioRecording } from "./hooks/useAudioRecording";
 import { useS3Upload } from "next-s3-upload";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useMutation } from "@tanstack/react-query";
+import { useLimits } from "./hooks/useLimits";
 
 interface RecordingModalProps {
   onClose: () => void;
@@ -58,9 +59,8 @@ export function RecordingModal({ onClose }: RecordingModalProps) {
   const trpc = useTRPC();
   const { apiKey } = useTogetherApiKey();
   const isBYOK = !!apiKey;
-  const { data: minutesData, isLoading: isMinutesLoading } = useQuery(
-    trpc.limit.getMinutesLeft.queryOptions()
-  );
+
+  const { isLoading, minutesData } = useLimits();
 
   const router = useRouter();
   const transcribeMutation = useMutation(
@@ -228,7 +228,7 @@ export function RecordingModal({ onClose }: RecordingModalProps) {
 
             {!recording && (
               <div className="w-full flex flex-col py-3 px-5 border-t border-gray-200">
-                {isMinutesLoading ? (
+                {isLoading ? (
                   <span className="text-sm text-[#4a5565]">Loading...</span>
                 ) : (
                   <RecordingMinutesLeft

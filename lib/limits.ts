@@ -10,7 +10,7 @@ const redis =
       })
     : undefined;
 
-const isLocal = process.env.NODE_ENV !== "production";
+const isLocal = false;
 
 // Limits
 const MINUTES_LIMIT_DEFAULT = 120;

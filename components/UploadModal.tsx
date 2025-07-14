@@ -17,7 +17,8 @@ import { RecordingBasics } from "./RecordingBasics";
 import { RecordingMinutesLeft } from "./RecordingMinutesLeft";
 import { useQuery } from "@tanstack/react-query";
 import { useTogetherApiKey } from "./TogetherApiKeyProvider";
-import useLocalStorage from "./useLocalStorage";
+import useLocalStorage from "./hooks/useLocalStorage";
+import { useLimits } from "./hooks/useLimits";
 
 // Move getDuration outside handleDrop
 const getDuration = (file: File) =>
@@ -45,9 +46,7 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
   const transcribeMutation = useMutation(
     trpc.whisper.transcribeFromS3.mutationOptions()
   );
-  const { data: minutesData, isLoading: isMinutesLoading } = useQuery(
-    trpc.limit.getMinutesLeft.queryOptions()
-  );
+  const { minutesData, isLoading } = useLimits();
 
   const handleDrop = useCallback(
     async (acceptedFiles: File[]) => {
@@ -163,7 +162,7 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
                     </div>
                   </div>
                   <div className="relative overflow-hidden px-5 py-3 w-full border-t border-gray-200">
-                    {isMinutesLoading ? (
+                    {isLoading ? (
                       <span className="text-sm text-[#4a5565]">Loading...</span>
                     ) : (
                       <RecordingMinutesLeft

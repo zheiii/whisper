@@ -122,7 +122,6 @@ export const whisperRouter = t.router({
       const whisper = await prisma.whisper.findUnique({
         where: { id: input.id },
         include: {
-          audioTracks: { orderBy: { createdAt: "asc" } },
           transformations: { orderBy: { createdAt: "asc" } },
         },
       });

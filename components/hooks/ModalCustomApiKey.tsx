@@ -8,11 +8,11 @@ import {
 } from "@/components/ui/dialog";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useCallback, useState, useRef, useEffect } from "react";
-import { useTogetherApiKey } from "./TogetherApiKeyProvider";
+import { useTogetherApiKey } from "../TogetherApiKeyProvider";
 import { toast } from "sonner";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
-import { RecordingMinutesLeft } from "./RecordingMinutesLeft";
+import { RecordingMinutesLeft } from "../RecordingMinutesLeft";
 
 export const ModalCustomApiKey = () => {
   const searchParams = useSearchParams();
@@ -27,6 +27,7 @@ export const ModalCustomApiKey = () => {
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const trpc = useTRPC();
   const isBYOK = !!apiKey;
+
   const { data: minutesData, isLoading: isMinutesLoading } = useQuery(
     trpc.limit.getMinutesLeft.queryOptions()
   );

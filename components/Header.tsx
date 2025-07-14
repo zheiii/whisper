@@ -1,6 +1,5 @@
 "use client";
 
-import { Mic } from "lucide-react";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import React from "react";
 import { Button } from "./ui/button";
@@ -13,27 +12,20 @@ import {
   useUser,
 } from "@clerk/nextjs";
 import Link from "next/link";
-import { ModalCustomApiKey } from "./ModalCustomApiKey";
-import { useTRPC } from "@/trpc/client";
-import { RecordingMinutesLeft } from "./RecordingMinutesLeft";
-import { useQuery } from "@tanstack/react-query";
+import { ModalCustomApiKey } from "./hooks/ModalCustomApiKey";
 import { toast } from "sonner";
 import { useTogetherApiKey } from "./TogetherApiKeyProvider";
+import { useLimits } from "./hooks/useLimits";
 
 export function Header() {
   const pathname = usePathname();
   const { user } = useUser();
   const [mounted, setMounted] = React.useState(false);
-  const trpc = useTRPC();
   const { apiKey } = useTogetherApiKey();
 
   const isBYOK = !!apiKey;
 
-  const { data: transformationsData, isLoading: isTransformationsLoading } =
-    useQuery({
-      ...trpc.limit.getTransformationsLeft.queryOptions(),
-      enabled: !!user && !isBYOK, // Don't fetch if BYOK (unlimited)
-    });
+  const { transformationsData, isLoading } = useLimits();
 
   React.useEffect(() => {
     setMounted(true);
@@ -88,7 +80,7 @@ export function Header() {
             onClick={() => {
               if (isBYOK) {
                 toast("You have unlimited transformations for your whispers!");
-              } else if (!isTransformationsLoading) {
+              } else if (!isLoading) {
                 toast(
                   `You got ${
                     transformationsData?.remaining ?? 0
@@ -101,7 +93,7 @@ export function Header() {
             <p className="text-sm font-medium text-left text-[#1e2939]">
               {isBYOK
                 ? "∞"
-                : isTransformationsLoading
+                : isLoading
                 ? "..."
                 : transformationsData?.remaining ?? 0}
             </p>
