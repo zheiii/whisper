@@ -82,3 +82,33 @@ export function formatWhisperTimestamp(timestamp: string | Date): string {
     return `${timePart} - ${format(date, "M/d/yyyy")}`;
   }
 }
+
+export const RECORDING_TYPES: {
+  name: string;
+  value: string;
+}[] = [
+  {
+    name: "Summary",
+    value: "summary",
+  },
+  {
+    name: "Quick Note",
+    value: "quick-note",
+  },
+  {
+    name: "List",
+    value: "list",
+  },
+  {
+    name: "Blog post",
+    value: "blog",
+  },
+  {
+    name: "Email",
+    value: "email",
+  },
+  {
+    name: "Custom Prompt",
+    value: "custom-prompt",
+  },
+];

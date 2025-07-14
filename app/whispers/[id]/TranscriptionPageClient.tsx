@@ -3,7 +3,7 @@
 import { useRouter } from "next/navigation";
 import { useTRPC } from "@/trpc/client";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { formatWhisperTimestamp } from "@/lib/utils";
+import { formatWhisperTimestamp, RECORDING_TYPES } from "@/lib/utils";
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
 import { TransformDropdown } from "@/components/TransformDropdown";
@@ -16,7 +16,6 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
-import { RecordingTypes } from "@/components/RecordingBasics";
 
 export default function TranscriptionPageClient({ id }: { id: string }) {
   const router = useRouter();
@@ -61,7 +60,7 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
 
   // Helper: get display name for a transformation type
   const getTypeDisplayName = (typeName: string) => {
-    const found = RecordingTypes.find((t) => t.value === typeName);
+    const found = RECORDING_TYPES.find((t) => t.value === typeName);
     return found ? found.name : typeName;
   };
 

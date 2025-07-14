@@ -7,37 +7,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { MAIN_LANGUAGES } from "@/lib/utils";
-
-export const RecordingTypes: {
-  name: string;
-  value: string;
-}[] = [
-  {
-    name: "Summary",
-    value: "summary",
-  },
-  {
-    name: "Quick Note",
-    value: "quick-note",
-  },
-  {
-    name: "List",
-    value: "list",
-  },
-  {
-    name: "Blog post",
-    value: "blog",
-  },
-  {
-    name: "Email",
-    value: "email",
-  },
-  {
-    name: "Custom Prompt",
-    value: "custom-prompt",
-  },
-];
+import { MAIN_LANGUAGES, RECORDING_TYPES } from "@/lib/utils";
 
 export const RecordingBasics = ({
   noteType,
@@ -73,7 +43,7 @@ export const RecordingBasics = ({
               <SelectValue className="flex items-center" />
             </SelectTrigger>
             <SelectContent>
-              {RecordingTypes.map((type) => (
+              {RECORDING_TYPES.map((type) => (
                 <SelectItem
                   key={type.value}
                   value={type.value}

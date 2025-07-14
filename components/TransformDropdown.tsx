@@ -5,7 +5,7 @@ import {
   DropdownMenuContent,
   DropdownMenuItem,
 } from "@/components/ui/dropdown-menu";
-import { RecordingTypes } from "@/components/RecordingBasics";
+import { RECORDING_TYPES } from "@/lib/utils";
 
 export function TransformDropdown({
   onTransform,
@@ -21,7 +21,7 @@ export function TransformDropdown({
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="!p-0">
-        {RecordingTypes.map((type) => (
+        {RECORDING_TYPES.map((type) => (
           <DropdownMenuItem
             key={type.value}
             onSelect={() => onTransform(type.value)}

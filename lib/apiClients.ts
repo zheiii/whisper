@@ -25,5 +25,5 @@ export function togetheraiClientWithKey(apiKey?: string) {
 }
 
 export const upstashWorkflow = new Client({
-  token: process.env.QSTASH_TOKEN || "",
+  token: process.env.QSTASH_TOKEN!,
 });

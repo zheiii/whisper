@@ -205,8 +205,15 @@ export const whisperRouter = t.router({
         },
       });
 
+      // Get the base URL for the workflow
+      const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
+        ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+        : "http://localhost:3000";
+
+      const workflowUrl = `${baseUrl}/api/transform`;
+
       await upstashWorkflow.trigger({
-        url: "/api/transform",
+        url: workflowUrl,
         body: JSON.stringify({
           whisperId: input.id,
           transformationId: transformation.id,

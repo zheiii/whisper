@@ -2,6 +2,7 @@ import { serve } from "@upstash/workflow/nextjs";
 import { PrismaClient } from "@/lib/generated/prisma";
 import { togetheraiClientWithKey } from "@/lib/apiClients";
 import { generateText } from "ai";
+import { RECORDING_TYPES } from "@/lib/utils";
 
 // Define the expected POST body type
 export interface TransformWorkflowPayload {
@@ -20,29 +21,32 @@ export const { POST } = serve<TransformWorkflowPayload>(async (context) => {
 
   const prisma = new PrismaClient();
 
-  let whisper: { fullTranscription: string } | null;
-  // Step 1: Fetch DB data
-  await context.run("fetch-whisper", async () => {
-    whisper = await prisma.whisper.findUnique({
+  const whisper = await context.run("fetch-whisper", async () => {
+    const data = await prisma.whisper.findUnique({
       where: { id: whisperId },
     });
-    if (!whisper) throw new Error("Whisper not found");
+    if (!data) throw new Error("Whisper not found");
+
+    return data;
   });
 
-  let aiText = "";
-  // Step 2: Process with AI
-  await context.run("process-with-ai", async () => {
+  const aiText = await context.run("process-with-ai", async () => {
     const aiClient = togetheraiClientWithKey(apiKey);
+
+    const typeFullName = RECORDING_TYPES.find((t) => t.name === typeName)?.name;
+
     const prompt = `
-      You are a helpful assistant. You will be given a transcription of an audio recording and you will generate a ${typeName} based on the transcription.
-      The transcription is: ${whisper!.fullTranscription}
+      You are a helpful assistant. You will be given a transcription of an audio recording and you will generate a ${typeFullName} based on the transcription.
+      The transcription is: ${whisper.fullTranscription}
+      Only output the ${typeFullName} itself, with no introductions, explanations, or extra commentary. Do not add phrases like "Based on the transcription" or "Let me know if you'd like me to help with anything else."
     `;
 
     const { text } = await generateText({
       model: aiClient("meta-llama/Meta-Llama-3-70B-Instruct-Turbo"),
       prompt,
     });
-    aiText = text;
+
+    return text;
   });
 
   // Step 3: Store results back in DB
