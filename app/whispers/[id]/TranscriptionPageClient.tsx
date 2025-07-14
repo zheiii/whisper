@@ -264,7 +264,6 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
     return () => {
       if (timer) clearTimeout(timer);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedTransformationId, labeledTransformations]);
 
   if (error || (!whisper && !isLoading)) {
