@@ -17,6 +17,7 @@ import {
   SelectItem,
 } from "@/components/ui/select";
 import { LoadingSection } from "@/components/whisper-page/LoadingSection";
+import { CustomMarkdown } from "@/components/CustomMarkdown";
 
 export default function TranscriptionPageClient({ id }: { id: string }) {
   const router = useRouter();
@@ -166,8 +167,8 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
       return <LoadingSection />;
     }
     return (
-      <div className="whitespace-pre-line rounded p-2 min-h-[120px] w-full bg-slate-50 text-slate-800">
-        {t.text}
+      <div className="whitespace-pre-line rounded p-2 min-h-[120px] w-full bg-white text-slate-800 flex flex-col gap-0.5">
+        <CustomMarkdown>{t.text}</CustomMarkdown>
       </div>
     );
   };

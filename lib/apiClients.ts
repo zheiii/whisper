@@ -1,5 +1,5 @@
 import { createTogetherAI } from "@ai-sdk/togetherai";
-import { Client } from "@upstash/workflow";
+import { Together } from "together-ai";
 
 const APP_NAME_HELICONE = "whisper-app";
 
@@ -13,7 +13,7 @@ export const togetheraiClient = createTogetherAI({
 });
 
 // Dynamic TogetherAI client for client-side use
-export function togetheraiClientWithKey(apiKey?: string) {
+export function togetherVercelAiClient(apiKey?: string) {
   return createTogetherAI({
     apiKey: apiKey || process.env.TOGETHER_API_KEY || "",
     baseURL: "https://together.helicone.ai/v1",
@@ -24,6 +24,10 @@ export function togetheraiClientWithKey(apiKey?: string) {
   });
 }
 
-export const upstashWorkflow = new Client({
-  token: process.env.QSTASH_TOKEN!,
-});
+export function togetherBaseClientWithKey(apiKey?: string) {
+  const baseSDKOptions: ConstructorParameters<typeof Together>[0] = {
+    apiKey: apiKey || process.env.TOGETHER_API_KEY,
+  };
+
+  return new Together(baseSDKOptions);
+}

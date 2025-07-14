@@ -8,8 +8,7 @@
     "start": "next start",
     "lint": "next lint",
     "studio": "prisma studio",
-    "db:push": "prisma db push",
-    "workflow": "npx @upstash/qstash-cli dev"
+    "db:push": "prisma db push"
   },
   "dependencies": {
     "@ai-sdk/togetherai": "^0.2.15",
@@ -26,7 +25,6 @@
     "@trpc/tanstack-react-query": "^11.4.3",
     "@upstash/ratelimit": "^2.0.5",
     "@upstash/redis": "^1.35.1",
-    "@upstash/workflow": "^0.2.15",
     "ai": "^4.3.17",
     "class-variance-authority": "^0.7.1",
     "client-only": "^0.0.1",
@@ -40,10 +38,11 @@
     "react": "^19.0.0",
     "react-dom": "^19.0.0",
     "react-dropzone": "^14.3.8",
+    "react-markdown": "^10.1.0",
     "server-only": "^0.0.1",
     "sonner": "^2.0.6",
     "tailwind-merge": "^3.3.1",
-    "together-ai": "^0.19.0",
+    "together-ai": "^0.20.0",
     "uuid": "^11.1.0",
     "zod": "^3.25.74"
   },

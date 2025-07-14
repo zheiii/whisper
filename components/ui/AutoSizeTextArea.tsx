@@ -95,7 +95,7 @@ export const AutosizeTextarea = React.forwardRef<
         value={value}
         ref={textAreaRef}
         style={{
-          lineHeight: "26px",
+          lineHeight: "30px",
         }}
         className={cn(
           "flex w-full rounded-md bg-background px-3 py-2 text-sm placeholder:text-muted-foreground focus-visible:outline-none disabled:cursor-not-allowed disabled:opacity-50",
