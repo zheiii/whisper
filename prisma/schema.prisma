@@ -26,13 +26,14 @@ model Whisper {
 }
 
 model Transformation {
-  id        String   @id @default(uuid())
-  whisperId String
-  whisper   Whisper? @relation(fields: [whisperId], references: [id])
-  typeName  String
-  text      String
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(uuid())
+  whisperId    String
+  whisper      Whisper? @relation(fields: [whisperId], references: [id])
+  isGenerating Boolean  @default(true)
+  typeName     String
+  text         String
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
 }
 
 model AudioTrack {
