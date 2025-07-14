@@ -34,7 +34,7 @@ const getDuration = (file: File) =>
 
 export function UploadModal({ onClose }: { onClose: () => void }) {
   const [noteType, setNoteType] = useState("quick-note");
-  const [language, setLanguage] = useLocalStorage("language", "en-US");
+  const [language, setLanguage] = useLocalStorage("language", "en");
 
   const [isUploadingFile, setIsUploadingFile] = useState(false);
   const [isDragActive, setIsDragActive] = useState(false);

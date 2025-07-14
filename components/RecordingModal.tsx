@@ -38,7 +38,7 @@ declare global {
 
 export function RecordingModal({ onClose }: RecordingModalProps) {
   const [noteType, setNoteType] = useState("quick-note");
-  const [language, setLanguage] = useLocalStorage("language", "en-US");
+  const [language, setLanguage] = useLocalStorage("language", "en");
 
   const { uploadToS3 } = useS3Upload();
 
