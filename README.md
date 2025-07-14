@@ -1,36 +1,37 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+<a href="https://github.com/nutlope/whisper-app">
+  <img alt="Whisper App" src="./public/og.jpg">
+  <h1 align="center">Whisper App</h1>
+</a>
 
-## Getting Started
+<p align="center">
+  An open source audio transcription and transformation app. Powered by Together.ai.
+</p>
 
-First, run the development server:
+## Tech stack
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
+- Together.ai for LLM-powered audio transcription and transformation
+- Vercel's AI SDK as the LLM framework
+- Clerk for authentication
+- Next.js App Router
+- S3 for object storage (audio files)
+- Upstash Redis for rate limiting and DB
+- Prisma for ORM
+- Vercel for hosting
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## How it works
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+1. Create an account on the site with Clerk
+2. Upload an audio file, which gets uploaded to S3
+3. The audio is transcribed using Together.ai's Whisper model
+4. Optionally, transform the transcription using LLMs (summarize, extract, etc.)
+5. View and manage your transcriptions in your dashboard
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Cloning & running
 
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+1. Fork or clone the repo
+2. Create an account at [Together AI](https://togetherai.link) for the LLM
+3. Create an account at [Upstash](https://upstash.com/) for Redis
+4. Create an account at [AWS](https://aws.amazon.com/) for S3
+5. Create a Clerk account at [Clerk](https://clerk.com/) for authentication
+6. Create a `.env` file (use `.example.env` for reference) and add your API keys
+7. Run `pnpm install` and `pnpm run dev` to install dependencies and start the app locally
