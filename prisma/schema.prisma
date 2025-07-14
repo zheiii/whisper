@@ -21,6 +21,18 @@ model Whisper {
   createdAt         DateTime     @default(now())
   fullTranscription String
   audioTracks       AudioTrack[]
+
+  transformations Transformation[]
+}
+
+model Transformation {
+  id        String   @id @default(uuid())
+  whisperId String
+  whisper   Whisper? @relation(fields: [whisperId], references: [id])
+  typeName  String
+  text      String
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model AudioTrack {

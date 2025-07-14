@@ -9,6 +9,13 @@ import Link from "next/link";
 import { TransformDropdown } from "@/components/TransformDropdown";
 import { toast } from "sonner";
 import { AutosizeTextarea } from "@/components/ui/AutoSizeTextArea";
+import {
+  Select,
+  SelectTrigger,
+  SelectValue,
+  SelectContent,
+  SelectItem,
+} from "@/components/ui/select";
 
 export default function TranscriptionPageClient({ id }: { id: string }) {
   const router = useRouter();
@@ -65,7 +72,7 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
   return (
     <div className="min-h-screen bg-white">
       <header className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
-        <div className="mx-auto max-w-[688px] w-full">
+        <div className="mx-auto max-w-[688px] w-full flex items-center gap-4">
           <input
             className="text-xl font-semibold bg-transparent border-none outline-none w-full"
             value={editableTitle}
@@ -94,13 +101,48 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
             spellCheck={true}
             disabled={titleMutation.status === "pending"}
           />
-          <div className="text-xs text-muted-foreground">
-            Last edited: {new Date(whisper.createdAt).toLocaleDateString()} –{" "}
-            {new Date(whisper.createdAt).toLocaleTimeString([], {
-              hour: "2-digit",
-              minute: "2-digit",
-            })}
-          </div>
+          {/* Transformations select using shadcn */}
+          <Select
+            value={(() => {
+              if (!whisper) return "base";
+              const selected = whisper?.transformations?.find(
+                (t: any) => t.text === editableTranscription
+              );
+              return selected ? selected.id : "base";
+            })()}
+            onValueChange={(val) => {
+              if (val === "base") {
+                setEditableTranscription(whisper?.fullTranscription ?? "");
+              } else {
+                const t = whisper?.transformations?.find(
+                  (t: any) => t.id === val
+                );
+                if (t) setEditableTranscription(t.text);
+              }
+            }}
+          >
+            <SelectTrigger className="flex justify-start items-center relative overflow-hidden gap-2 px-3 py-[5px] rounded-lg bg-white border-[0.5px] border-[#d1d5dc] min-w-[120px]">
+              <SelectValue>
+                <span className="flex-grow-0 flex-shrink-0 text-sm text-center text-[#364153]">
+                  {(() => {
+                    if (!whisper) return "Transcript";
+                    const selected = whisper?.transformations?.find(
+                      (t: any) => t.text === editableTranscription
+                    );
+                    return selected ? selected.typeName : "Transcript";
+                  })()}
+                </span>
+              </SelectValue>
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="base">Transcript</SelectItem>
+              {whisper?.transformations?.map((t: any) => (
+                <SelectItem key={t.id} value={t.id}>
+                  {t.typeName}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
         {/* Add your transcript dropdown/actions here */}
       </header>

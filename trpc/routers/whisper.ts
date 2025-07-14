@@ -118,7 +118,10 @@ export const whisperRouter = t.router({
     .query(async ({ input }) => {
       const whisper = await prisma.whisper.findUnique({
         where: { id: input.id },
-        include: { audioTracks: { orderBy: { createdAt: "asc" } } },
+        include: {
+          audioTracks: { orderBy: { createdAt: "asc" } },
+          transformations: { orderBy: { createdAt: "asc" } },
+        },
       });
       if (!whisper) throw new Error("Whisper not found");
       return whisper;
