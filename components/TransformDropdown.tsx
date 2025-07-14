@@ -7,10 +7,11 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { RecordingTypes } from "@/components/RecordingBasics";
 
-export function TransformDropdown() {
-  const [selected, setSelected] = useState<string | undefined>(undefined);
-  const selectedType = RecordingTypes.find((t) => t.value === selected);
-
+export function TransformDropdown({
+  onTransform,
+}: {
+  onTransform: (type: string) => void;
+}) {
   return (
     <DropdownMenu>
       <DropdownMenuTrigger asChild>
@@ -23,7 +24,7 @@ export function TransformDropdown() {
         {RecordingTypes.map((type) => (
           <DropdownMenuItem
             key={type.value}
-            onSelect={() => setSelected(type.value)}
+            onSelect={() => onTransform(type.value)}
             className="flex items-center gap-2 cursor-pointer h-[51px] p-3 border-b border-slate-200 hover:bg-slate-50 min-w-[322px] max-w-full"
           >
             <img

@@ -2,7 +2,7 @@
 
 import { useRouter } from "next/navigation";
 import { useTRPC } from "@/trpc/client";
-import { useQuery, useMutation } from "@tanstack/react-query";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { formatWhisperTimestamp } from "@/lib/utils";
 import { useState, useRef, useEffect } from "react";
 import Link from "next/link";
@@ -16,16 +16,25 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { RecordingTypes } from "@/components/RecordingBasics";
 
 export default function TranscriptionPageClient({ id }: { id: string }) {
   const router = useRouter();
   const trpc = useTRPC();
+  const queryClient = useQueryClient();
   const [showContinueModal, setShowContinueModal] = useState(false);
+  const [selectedTransformationId, setSelectedTransformationId] = useState<
+    string | null
+  >(null);
+  const [pendingTransformations, setPendingTransformations] = useState<any[]>(
+    []
+  ); // local temp transformations
 
   const {
     data: whisper,
     isLoading,
     error,
+    refetch,
   } = useQuery(trpc.whisper.getWhisperWithTracks.queryOptions({ id }));
 
   const [editableTranscription, setEditableTranscription] = useState("");
@@ -36,7 +45,56 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
     trpc.whisper.updateFullTranscription.mutationOptions()
   );
   const titleMutation = useMutation(trpc.whisper.updateTitle.mutationOptions());
+  const createTransformationMutation = useMutation(
+    trpc.whisper.createTransformation.mutationOptions()
+  );
 
+  // Helper: merge server and pending transformations
+  const getAllTransformations = () => {
+    const server = whisper?.transformations || [];
+    // Remove any pending that are now in server (by id)
+    const filteredPending = pendingTransformations.filter(
+      (pt) => !server.some((st: any) => st.id === pt.id)
+    );
+    return [...server, ...filteredPending];
+  };
+
+  // Helper: get display name for a transformation type
+  const getTypeDisplayName = (typeName: string) => {
+    const found = RecordingTypes.find((t) => t.value === typeName);
+    return found ? found.name : typeName;
+  };
+
+  // Helper: group and label transformations by type (with display names)
+  const getLabeledTransformations = () => {
+    const all = getAllTransformations();
+    const grouped: Record<string, any[]> = {};
+    all.forEach((t) => {
+      if (!grouped[t.typeName]) grouped[t.typeName] = [];
+      grouped[t.typeName].push(t);
+    });
+    // Sort each group by createdAt (oldest first)
+    Object.values(grouped).forEach((arr) =>
+      arr.sort(
+        (a, b) =>
+          new Date(a.createdAt).getTime() - new Date(b.createdAt).getTime()
+      )
+    );
+    // Assign labels using display name
+    const labeled: any[] = [];
+    Object.entries(grouped).forEach(([type, arr]) => {
+      const displayName = getTypeDisplayName(type);
+      arr.forEach((t, idx) => {
+        labeled.push({
+          ...t,
+          label: arr.length > 1 ? `${displayName} ${idx + 1}` : displayName,
+        });
+      });
+    });
+    return labeled;
+  };
+
+  // When whisper loads, set base transcription and title
   useEffect(() => {
     if (whisper?.fullTranscription) {
       setEditableTranscription(whisper.fullTranscription);
@@ -44,7 +102,115 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
     if (whisper?.title) {
       setEditableTitle(whisper.title);
     }
+    // Default selection: base
+    if (!selectedTransformationId) setSelectedTransformationId("base");
   }, [whisper?.fullTranscription, whisper?.title]);
+
+  // When a transformation is selected, update the text shown
+  const getCurrentTranscription = () => {
+    if (selectedTransformationId === "base")
+      return whisper?.fullTranscription || "";
+    const all = getAllTransformations();
+    const t = all.find((t) => t.id === selectedTransformationId);
+    return t ? t.text : whisper?.fullTranscription || "";
+  };
+
+  // Polling for transformation completion
+  const pollTransformation = async (transformationId: string, attempt = 1) => {
+    if (attempt > 5) return;
+    await new Promise((res) => setTimeout(res, 2000));
+    await refetch();
+    const all = getAllTransformations();
+    const t = all.find((t) => t.id === transformationId);
+    if (t && !t.isGenerating) {
+      // Remove from pending
+      setPendingTransformations((prev) =>
+        prev.filter((pt) => pt.id !== transformationId)
+      );
+      return;
+    }
+    pollTransformation(transformationId, attempt + 1);
+  };
+
+  // Handler for creating a transformation
+  const handleTransform = async (typeName: string) => {
+    // Call mutation
+    const res = await createTransformationMutation.mutateAsync({
+      id,
+      typeName,
+    });
+    // Add to pending
+    setPendingTransformations((prev) => [
+      ...prev,
+      {
+        id: res.id,
+        typeName: res.typeName,
+        text: "",
+        isGenerating: true,
+        createdAt: res.createdAt,
+      },
+    ]);
+    setSelectedTransformationId(res.id);
+    pollTransformation(res.id);
+  };
+
+  // UI: loader for isGenerating
+  const renderTranscription = () => {
+    if (selectedTransformationId === "base") {
+      return (
+        <AutosizeTextarea
+          className="whitespace-pre-line rounded p-2 min-h-[120px] w-full focus:outline-none resize-vertical"
+          value={editableTranscription}
+          onChange={(e) => {
+            const value = e.target.value;
+            setEditableTranscription(value);
+            if (debounceTimeout.current) clearTimeout(debounceTimeout.current);
+            debounceTimeout.current = setTimeout(() => {
+              trpcMutation.mutate(
+                { id, fullTranscription: value },
+                {
+                  onSuccess: () => {
+                    toast.success("Transcription saved!", {
+                      id: "transcription-save",
+                    });
+                  },
+                  onError: () => {
+                    toast.error("Failed to save transcription.", {
+                      id: "transcription-save",
+                    });
+                  },
+                }
+              );
+            }, 500);
+          }}
+          spellCheck={true}
+          aria-label="Edit transcription"
+          disabled={trpcMutation.status === "pending"}
+        />
+      );
+    }
+    // Find transformation
+    const all = getAllTransformations();
+    const t = all.find((t) => t.id === selectedTransformationId);
+    if (!t) return null;
+    if (t.isGenerating) {
+      // Loader: animated 3 dots
+      return (
+        <div className="flex items-center min-h-[120px] text-lg text-slate-500">
+          <span>Generating</span>
+          <span className="ml-2 animate-pulse">...</span>
+        </div>
+      );
+    }
+    return (
+      <div className="whitespace-pre-line rounded p-2 min-h-[120px] w-full bg-slate-50 text-slate-800">
+        {t.text}
+      </div>
+    );
+  };
+
+  // Dropdown for selecting transformation
+  const labeledTransformations = getLabeledTransformations();
 
   if (isLoading) {
     return (
@@ -103,42 +269,33 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
           />
           {/* Transformations select using shadcn */}
           <Select
-            value={(() => {
-              if (!whisper) return "base";
-              const selected = whisper?.transformations?.find(
-                (t: any) => t.text === editableTranscription
-              );
-              return selected ? selected.id : "base";
-            })()}
-            onValueChange={(val) => {
-              if (val === "base") {
-                setEditableTranscription(whisper?.fullTranscription ?? "");
-              } else {
-                const t = whisper?.transformations?.find(
-                  (t: any) => t.id === val
-                );
-                if (t) setEditableTranscription(t.text);
-              }
-            }}
+            value={selectedTransformationId || "base"}
+            onValueChange={(val) => setSelectedTransformationId(val)}
           >
             <SelectTrigger className="flex justify-start items-center relative overflow-hidden gap-2 px-3 py-[5px] rounded-lg bg-white border-[0.5px] border-[#d1d5dc] min-w-[120px]">
               <SelectValue>
                 <span className="flex-grow-0 flex-shrink-0 text-sm text-center text-[#364153]">
                   {(() => {
-                    if (!whisper) return "Transcript";
-                    const selected = whisper?.transformations?.find(
-                      (t: any) => t.text === editableTranscription
+                    if (selectedTransformationId === "base")
+                      return "Transcript";
+                    const t = labeledTransformations.find(
+                      (t) => t.id === selectedTransformationId
                     );
-                    return selected ? selected.typeName : "Transcript";
+                    return t ? t.label : "Transcript";
                   })()}
                 </span>
               </SelectValue>
             </SelectTrigger>
             <SelectContent>
               <SelectItem value="base">Transcript</SelectItem>
-              {whisper?.transformations?.map((t: any) => (
+              {labeledTransformations.map((t) => (
                 <SelectItem key={t.id} value={t.id}>
-                  {t.typeName}
+                  {t.label}
+                  {t.isGenerating && (
+                    <span className="ml-2 animate-pulse text-xs text-slate-400">
+                      ...
+                    </span>
+                  )}
                 </SelectItem>
               ))}
             </SelectContent>
@@ -147,38 +304,7 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
         {/* Add your transcript dropdown/actions here */}
       </header>
       <main className="py-8 mx-auto max-w-[688px] w-full">
-        <div className="mb-6">
-          <AutosizeTextarea
-            className="whitespace-pre-line rounded p-2 min-h-[120px] w-full focus:outline-none resize-vertical"
-            value={editableTranscription}
-            onChange={(e) => {
-              const value = e.target.value;
-              setEditableTranscription(value);
-              if (debounceTimeout.current)
-                clearTimeout(debounceTimeout.current);
-              debounceTimeout.current = setTimeout(() => {
-                trpcMutation.mutate(
-                  { id, fullTranscription: value },
-                  {
-                    onSuccess: () => {
-                      toast.success("Transcription saved!", {
-                        id: "transcription-save",
-                      });
-                    },
-                    onError: () => {
-                      toast.error("Failed to save transcription.", {
-                        id: "transcription-save",
-                      });
-                    },
-                  }
-                );
-              }, 500);
-            }}
-            spellCheck={true}
-            aria-label="Edit transcription"
-            disabled={trpcMutation.status === "pending"}
-          />
-        </div>
+        <div className="mb-6">{renderTranscription()}</div>
         <div>
           <h2 className="text-lg font-medium mb-2">Audio Tracks used RAW</h2>
           <ul>
@@ -195,7 +321,7 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
         </div>
       </main>
       <footer className="fixed bottom-0 left-0 w-full md:left-1/2 md:-translate-x-1/2 bg-white border-t md:border md:rounded-2xl border-slate-200 px-4 py-3 flex flex-col md:flex-row items-center z-50 max-w-[730px] gap-2 justify-center md:mb-4">
-        <TransformDropdown />
+        <TransformDropdown onTransform={handleTransform} />
         <div className="flex gap-2 w-full md:flex-row max-w-md md:max-w-auto justify-between items-center">
           <button
             className="flex-1 py-2 rounded-lg border border-slate-200 bg-white text-[#364153] font-medium flex items-center justify-center gap-2 cursor-pointer"
@@ -210,7 +336,7 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
             className="flex-1 py-2 cursor-pointer rounded-lg border border-slate-200 bg-white text-[#364153] font-medium flex items-center justify-center gap-2"
             onClick={async () => {
               // just copy the transcript to clipboard
-              await navigator.clipboard.writeText(editableTranscription);
+              await navigator.clipboard.writeText(getCurrentTranscription());
               toast.success("Copied to clipboard!", {
                 id: "copy-to-clipboard",
               });
