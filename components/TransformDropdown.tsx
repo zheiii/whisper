@@ -10,8 +10,10 @@ import { useLimits } from "./hooks/useLimits";
 
 export function TransformDropdown({
   onTransform,
+  isStreaming = false,
 }: {
   onTransform: (type: string) => void;
+  isStreaming?: boolean;
 }) {
   const { isLoading, transformationsData } = useLimits();
 
@@ -19,11 +21,21 @@ export function TransformDropdown({
     <DropdownMenu>
       <DropdownMenuTrigger
         asChild
-        disabled={isLoading || transformationsData?.remaining === 0}
+        disabled={
+          isStreaming || isLoading || transformationsData?.remaining === 0
+        }
       >
-        <button className="w-full md:max-w-[322px] max-w-md bg-slate-900 text-white py-2 rounded-lg font-semibold text-base flex items-center justify-center gap-2 cursor-pointer">
+        <button
+          className={`w-full md:max-w-[322px] max-w-md py-2 rounded-lg font-semibold text-base flex items-center justify-center gap-2 cursor-pointer transition-colors
+            ${
+              isStreaming
+                ? "bg-slate-100 text-slate-400"
+                : "bg-slate-900 text-white"
+            }
+          `}
+        >
           <img src="/sparkFull.svg" className="size-5 min-w-5 min-h-5" />
-          <span>Transform</span>
+          <span>{isStreaming ? "Streaming ..." : "Transform"}</span>
         </button>
       </DropdownMenuTrigger>
       <DropdownMenuContent className="!p-0">

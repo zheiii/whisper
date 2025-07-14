@@ -6,7 +6,6 @@ import { protectedProcedure } from "../init";
 import { limitMinutes } from "@/lib/limits";
 import { fal } from "@fal-ai/client";
 import { togetherBaseClientWithKey } from "@/lib/apiClients";
-import { doTransformation } from "@/lib/transformation";
 
 const prisma = new PrismaClient();
 
@@ -205,20 +204,5 @@ export const whisperRouter = t.router({
     }),
 
   // --- CREATE TRANSFORMATION ---
-  createTransformation: protectedProcedure
-    .input(z.object({ id: z.string(), typeName: z.string() }))
-    .mutation(async ({ input, ctx }) => {
-      // Only allow the owner to create transformation
-      const whisper = await prisma.whisper.findUnique({
-        where: { id: input.id },
-      });
-      if (!whisper) throw new Error("Whisper not found");
-      if (whisper.userId !== ctx.auth.userId) throw new Error("Unauthorized");
-
-      return doTransformation({
-        whisperId: input.id,
-        typeName: input.typeName,
-        userId: ctx.auth.userId,
-      });
-    }),
+  // Removed createTransformation mutation; now handled by /api/transform route
 });
