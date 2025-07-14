@@ -4,7 +4,7 @@ import { PrismaClient } from "../../lib/generated/prisma";
 import { fal } from "@fal-ai/client";
 import { v4 as uuidv4 } from "uuid";
 import { protectedProcedure } from "../init";
-import { limitMinutes } from "@/lib/limits";
+import { limitMinutes, limitTransformations } from "@/lib/limits";
 import { togetheraiClientWithKey, upstashWorkflow } from "@/lib/apiClients";
 import { generateText } from "ai";
 import { TransformWorkflowPayload } from "@/app/api/transform/route";
@@ -196,39 +196,49 @@ export const whisperRouter = t.router({
       });
       if (!whisper) throw new Error("Whisper not found");
       if (whisper.userId !== ctx.auth.userId) throw new Error("Unauthorized");
-      const transformation = await prisma.transformation.create({
-        data: {
-          whisperId: input.id,
-          typeName: input.typeName,
-          text: "", // Will be filled by AI later
-          isGenerating: true,
-        },
-      });
 
-      // Get the base URL for the workflow
-      const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
-        ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-        : "http://localhost:3000";
+      try {
+        const success = await limitTransformations({
+          clerkUserId: ctx.auth.userId,
+          isBringingKey: !!ctx.togetherApiKey,
+        });
 
-      const workflowUrl = `${baseUrl}/api/transform`;
+        const transformation = await prisma.transformation.create({
+          data: {
+            whisperId: input.id,
+            typeName: input.typeName,
+            text: "", // Will be filled by AI later
+            isGenerating: true,
+          },
+        });
 
-      await upstashWorkflow.trigger({
-        url: workflowUrl,
-        body: JSON.stringify({
-          whisperId: input.id,
-          transformationId: transformation.id,
-          typeName: input.typeName,
-          apiKey: ctx.togetherApiKey,
-        } as TransformWorkflowPayload), // optional body
-        retries: 3,
-      });
+        // Get the base URL for the workflow
+        const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
+          ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
+          : "http://localhost:3000";
 
-      return {
-        id: transformation.id,
-        isGenerating: transformation.isGenerating,
-        typeName: transformation.typeName,
-        text: transformation.text,
-        createdAt: transformation.createdAt,
-      };
+        const workflowUrl = `${baseUrl}/api/transform`;
+
+        await upstashWorkflow.trigger({
+          url: workflowUrl,
+          body: JSON.stringify({
+            whisperId: input.id,
+            transformationId: transformation.id,
+            typeName: input.typeName,
+            apiKey: ctx.togetherApiKey,
+          } as TransformWorkflowPayload), // optional body
+          retries: 3,
+        });
+
+        return {
+          id: transformation.id,
+          isGenerating: transformation.isGenerating,
+          typeName: transformation.typeName,
+          text: transformation.text,
+          createdAt: transformation.createdAt,
+        };
+      } catch (e) {
+        throw e;
+      }
     }),
 });

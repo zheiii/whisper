@@ -36,9 +36,12 @@ export const { POST } = serve<TransformWorkflowPayload>(async (context) => {
     const typeFullName = RECORDING_TYPES.find((t) => t.name === typeName)?.name;
 
     const prompt = `
-      You are a helpful assistant. You will be given a transcription of an audio recording and you will generate a ${typeFullName} based on the transcription.
+      You are a helpful assistant. You will be given a transcription of an audio recording and you will generate a ${typeFullName} based on the transcription with markdown formatting. 
+      Only output the generation itself, with no introductions, explanations, or extra commentary.
+      
       The transcription is: ${whisper.fullTranscription}
-      Only output the ${typeFullName} itself, with no introductions, explanations, or extra commentary. Do not add phrases like "Based on the transcription" or "Let me know if you'd like me to help with anything else."
+
+      Do not add phrases like "Based on the transcription" or "Let me know if you'd like me to help with anything else."
     `;
 
     const { text } = await generateText({

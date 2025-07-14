@@ -107,8 +107,8 @@ export const RECORDING_TYPES: {
     name: "Email",
     value: "email",
   },
-  {
-    name: "Custom Prompt",
-    value: "custom-prompt",
-  },
+  // {
+  //   name: "Custom Prompt",
+  //   value: "custom-prompt",
+  // },
 ];

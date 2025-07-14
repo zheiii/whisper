@@ -49,23 +49,6 @@ export function TranscriptionView({
     setIsEditing(false);
   };
 
-  const handleAddExtra = (newContent: { title: string; content: string }) => {
-    const updatedContent =
-      transcription.content +
-      "\n\n--- Additional Recording ---\n\n" +
-      newContent.content;
-    const preview =
-      updatedContent.length > 100
-        ? updatedContent.substring(0, 100) + "..."
-        : updatedContent;
-
-    onUpdate({
-      ...transcription,
-      content: updatedContent,
-      preview,
-    });
-  };
-
   const handleDelete = () => {
     if (confirm("Are you sure you want to delete this transcription?")) {
       onDelete(transcription.id);

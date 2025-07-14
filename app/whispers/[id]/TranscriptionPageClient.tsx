@@ -16,12 +16,12 @@ import {
   SelectContent,
   SelectItem,
 } from "@/components/ui/select";
+import { LoadingSection } from "@/components/whisper-page/LoadingSection";
 
 export default function TranscriptionPageClient({ id }: { id: string }) {
   const router = useRouter();
   const trpc = useTRPC();
   const queryClient = useQueryClient();
-  const [showContinueModal, setShowContinueModal] = useState(false);
   const [selectedTransformationId, setSelectedTransformationId] = useState<
     string | null
   >(null);
@@ -193,13 +193,7 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
     const t = all.find((t) => t.id === selectedTransformationId);
     if (!t) return null;
     if (t.isGenerating) {
-      // Loader: animated 3 dots
-      return (
-        <div className="flex items-center min-h-[120px] text-lg text-slate-500">
-          <span>Generating</span>
-          <span className="ml-2 animate-pulse">...</span>
-        </div>
-      );
+      return <LoadingSection />;
     }
     return (
       <div className="whitespace-pre-line rounded p-2 min-h-[120px] w-full bg-slate-50 text-slate-800">
@@ -211,14 +205,7 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
   // Dropdown for selecting transformation
   const labeledTransformations = getLabeledTransformations();
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        Loading...
-      </div>
-    );
-  }
-  if (error || !whisper) {
+  if (error || (!whisper && !isLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -271,9 +258,9 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
             value={selectedTransformationId || "base"}
             onValueChange={(val) => setSelectedTransformationId(val)}
           >
-            <SelectTrigger className="flex justify-start items-center relative overflow-hidden gap-2 px-3 py-[5px] rounded-lg bg-white border-[0.5px] border-[#d1d5dc] min-w-[120px]">
+            <SelectTrigger className="flex justify-between items-center relative overflow-hidden gap-2 px-3 py-[5px] rounded-lg bg-white border-[0.5px] border-[#d1d5dc] min-w-[120px]">
               <SelectValue>
-                <span className="flex-grow-0 flex-shrink-0 text-sm text-center text-[#364153]">
+                <span className="text-sm text-center text-[#364153]">
                   {(() => {
                     if (selectedTransformationId === "base")
                       return "Transcript";
@@ -303,11 +290,15 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
         {/* Add your transcript dropdown/actions here */}
       </header>
       <main className="py-8 mx-auto max-w-[688px] w-full">
-        <div className="mb-6">{renderTranscription()}</div>
+        {isLoading ? (
+          <LoadingSection />
+        ) : (
+          <div className="mb-6">{renderTranscription()}</div>
+        )}
         <div>
           <h2 className="text-lg font-medium mb-2">Audio Tracks used RAW</h2>
           <ul>
-            {whisper.audioTracks.map((track: any) => (
+            {whisper?.audioTracks.map((track: any) => (
               <li key={track.id} className="mb-4">
                 <audio controls src={track.fileUrl} className="w-full mb-1" />
                 <div className="text-xs text-muted-foreground">
@@ -322,7 +313,7 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
       <footer className="fixed bottom-0 left-0 w-full md:left-1/2 md:-translate-x-1/2 bg-white border-t md:border md:rounded-2xl border-slate-200 px-4 py-3 flex flex-col md:flex-row items-center z-50 max-w-[730px] gap-2 justify-center md:mb-4">
         <TransformDropdown onTransform={handleTransform} />
         <div className="flex gap-2 w-full md:flex-row max-w-md md:max-w-auto justify-between items-center">
-          <button
+          {/* <button
             className="flex-1 py-2 rounded-lg border border-slate-200 bg-white text-[#364153] font-medium flex items-center justify-center gap-2 cursor-pointer"
             onClick={() => {
               setShowContinueModal(true);
@@ -330,7 +321,7 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
           >
             <img src="/microphoneFull.svg" className="size-5 min-w-5 min-h-5" />
             <span>Continue</span>
-          </button>
+          </button> */}
           <button
             className="flex-1 py-2 cursor-pointer rounded-lg border border-slate-200 bg-white text-[#364153] font-medium flex items-center justify-center gap-2"
             onClick={async () => {
