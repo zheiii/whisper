@@ -1,4 +1,4 @@
-import { togetheraiClientWithKey } from "@/lib/apiClients";
+import { togetherVercelAiClient } from "@/lib/apiClients";
 import { generateText } from "ai";
 
 export async function POST(request: Request) {
@@ -12,7 +12,7 @@ export async function POST(request: Request) {
   }
 
   try {
-    const customClient = togetheraiClientWithKey(apiKey);
+    const customClient = togetherVercelAiClient(apiKey);
     // Make a simple LLM call to validate the API key
     await generateText({
       model: customClient("Qwen/Qwen2.5-72B-Instruct-Turbo"),
