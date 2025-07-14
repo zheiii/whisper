@@ -6,6 +6,7 @@ import { v4 as uuidv4 } from "uuid";
 import { protectedProcedure } from "../init";
 import { limitMinutes, limitTransformations } from "@/lib/limits";
 import { togetheraiClientWithKey, upstashWorkflow } from "@/lib/apiClients";
+import { doTransformation } from "@/lib/transformation";
 import { generateText } from "ai";
 import { TransformWorkflowPayload } from "@/app/api/transform/route";
 
@@ -70,6 +71,8 @@ export const whisperRouter = t.router({
           (transcription.split(" ").length > 8 ? "..." : "")
         : "Untitled Whisper";
 
+      const whisperId = input.whisperId || uuidv4();
+
       if (input.whisperId) {
         // Add AudioTrack to existing Whisper
         const whisper = await prisma.whisper.findUnique({
@@ -92,13 +95,11 @@ export const whisperRouter = t.router({
             fullTranscription: whisper.fullTranscription + "\n" + transcription,
           },
         });
-        return { id: input.whisperId };
       } else {
         // Create new Whisper and first AudioTrack
-        const newId = uuidv4();
         await prisma.whisper.create({
           data: {
-            id: newId,
+            id: whisperId,
             title,
             userId: ctx.auth.userId,
             fullTranscription: transcription,
@@ -113,8 +114,19 @@ export const whisperRouter = t.router({
             },
           },
         });
-        return { id: newId };
       }
+
+      // If noteType is present, create a transformation and trigger workflow
+      if (input.noteType) {
+        await doTransformation({
+          whisperId,
+          typeName: input.noteType,
+          userId: ctx.auth.userId,
+          apiKey: ctx.togetherApiKey,
+          prisma,
+        });
+      }
+      return { id: whisperId };
     }),
   getWhisperWithTracks: protectedProcedure
     .input(z.object({ id: z.string() }))
@@ -197,38 +209,13 @@ export const whisperRouter = t.router({
       if (whisper.userId !== ctx.auth.userId) throw new Error("Unauthorized");
 
       try {
-        const success = await limitTransformations({
-          clerkUserId: ctx.auth.userId,
-          isBringingKey: !!ctx.togetherApiKey,
+        const transformation = await doTransformation({
+          whisperId: input.id,
+          typeName: input.typeName,
+          userId: ctx.auth.userId,
+          apiKey: ctx.togetherApiKey,
+          prisma,
         });
-
-        const transformation = await prisma.transformation.create({
-          data: {
-            whisperId: input.id,
-            typeName: input.typeName,
-            text: "", // Will be filled by AI later
-            isGenerating: true,
-          },
-        });
-
-        // Get the base URL for the workflow
-        const baseUrl = process.env.VERCEL_PROJECT_PRODUCTION_URL
-          ? `https://${process.env.VERCEL_PROJECT_PRODUCTION_URL}`
-          : "http://localhost:3000";
-
-        const workflowUrl = `${baseUrl}/api/transform`;
-
-        await upstashWorkflow.trigger({
-          url: workflowUrl,
-          body: JSON.stringify({
-            whisperId: input.id,
-            transformationId: transformation.id,
-            typeName: input.typeName,
-            apiKey: ctx.togetherApiKey,
-          } as TransformWorkflowPayload), // optional body
-          retries: 3,
-        });
-
         return {
           id: transformation.id,
           isGenerating: transformation.isGenerating,

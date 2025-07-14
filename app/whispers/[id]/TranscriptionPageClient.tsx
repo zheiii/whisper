@@ -25,9 +25,6 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
   const [selectedTransformationId, setSelectedTransformationId] = useState<
     string | null
   >(null);
-  const [pendingTransformations, setPendingTransformations] = useState<any[]>(
-    []
-  ); // local temp transformations
 
   const {
     data: whisper,
@@ -38,6 +35,7 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
 
   const [editableTranscription, setEditableTranscription] = useState("");
   const [editableTitle, setEditableTitle] = useState("");
+
   const debounceTimeout = useRef<NodeJS.Timeout | null>(null);
   const titleDebounceTimeout = useRef<NodeJS.Timeout | null>(null);
   const trpcMutation = useMutation(
@@ -48,14 +46,9 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
     trpc.whisper.createTransformation.mutationOptions()
   );
 
-  // Helper: merge server and pending transformations
+  // Helper: get all transformations from server only
   const getAllTransformations = () => {
-    const server = whisper?.transformations || [];
-    // Remove any pending that are now in server (by id)
-    const filteredPending = pendingTransformations.filter(
-      (pt) => !server.some((st: any) => st.id === pt.id)
-    );
-    return [...server, ...filteredPending];
+    return whisper?.transformations || [];
   };
 
   // Helper: get display name for a transformation type
@@ -106,29 +99,12 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
   }, [whisper?.fullTranscription, whisper?.title]);
 
   // When a transformation is selected, update the text shown
-  const getCurrentTranscription = () => {
+  const getSelectedTransformation = () => {
     if (selectedTransformationId === "base")
       return whisper?.fullTranscription || "";
     const all = getAllTransformations();
     const t = all.find((t) => t.id === selectedTransformationId);
     return t ? t.text : whisper?.fullTranscription || "";
-  };
-
-  // Polling for transformation completion
-  const pollTransformation = async (transformationId: string, attempt = 1) => {
-    if (attempt > 5) return;
-    await new Promise((res) => setTimeout(res, 2000));
-    await refetch();
-    const all = getAllTransformations();
-    const t = all.find((t) => t.id === transformationId);
-    if (t && !t.isGenerating) {
-      // Remove from pending
-      setPendingTransformations((prev) =>
-        prev.filter((pt) => pt.id !== transformationId)
-      );
-      return;
-    }
-    pollTransformation(transformationId, attempt + 1);
   };
 
   // Handler for creating a transformation
@@ -142,20 +118,9 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
     await queryClient.invalidateQueries({
       queryKey: trpc.limit.getTransformationsLeft.queryKey(),
     });
-
-    // Add to pending
-    setPendingTransformations((prev) => [
-      ...prev,
-      {
-        id: res.id,
-        typeName: res.typeName,
-        text: "",
-        isGenerating: true,
-        createdAt: res.createdAt,
-      },
-    ]);
     setSelectedTransformationId(res.id);
-    pollTransformation(res.id);
+    // No pending state or polling, just rely on server updates
+    await refetch();
   };
 
   // UI: loader for isGenerating
@@ -210,6 +175,39 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
   // Dropdown for selecting transformation
   const labeledTransformations = getLabeledTransformations();
 
+  // Polling logic: refetch if selected transformation is generating
+  useEffect(() => {
+    let attempts = 0;
+    let timer: NodeJS.Timeout | null = null;
+    const poll = async () => {
+      const t = labeledTransformations.find(
+        (t) => t.id === selectedTransformationId
+      );
+      if (
+        selectedTransformationId !== "base" &&
+        t &&
+        t.isGenerating &&
+        attempts < 5
+      ) {
+        attempts++;
+        await refetch();
+        timer = setTimeout(poll, 5000);
+      }
+    };
+    // Start polling if needed
+    const t = labeledTransformations.find(
+      (t) => t.id === selectedTransformationId
+    );
+    if (selectedTransformationId !== "base" && t && t.isGenerating) {
+      poll();
+    }
+    // Cleanup on unmount or when dependencies change
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedTransformationId, labeledTransformations]);
+
   if (error || (!whisper && !isLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center">
@@ -258,10 +256,11 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
             spellCheck={true}
             disabled={titleMutation.status === "pending"}
           />
-          {/* Transformations select using shadcn */}
           <Select
             value={selectedTransformationId || "base"}
-            onValueChange={(val) => setSelectedTransformationId(val)}
+            onValueChange={async (val) => {
+              setSelectedTransformationId(val);
+            }}
           >
             <SelectTrigger className="flex justify-between items-center relative overflow-hidden gap-2 px-3 py-[5px] rounded-lg bg-white border-[0.5px] border-[#d1d5dc] min-w-[120px]">
               <SelectValue>
@@ -292,7 +291,6 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
             </SelectContent>
           </Select>
         </div>
-        {/* Add your transcript dropdown/actions here */}
       </header>
       <main className="py-8 mx-auto max-w-[688px] w-full">
         {isLoading ? (
@@ -317,7 +315,7 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
             className="flex-1 py-2 cursor-pointer rounded-lg border border-slate-200 bg-white text-[#364153] font-medium flex items-center justify-center gap-2"
             onClick={async () => {
               // just copy the transcript to clipboard
-              await navigator.clipboard.writeText(getCurrentTranscription());
+              await navigator.clipboard.writeText(getSelectedTransformation());
               toast.success("Copied to clipboard!", {
                 id: "copy-to-clipboard",
               });
