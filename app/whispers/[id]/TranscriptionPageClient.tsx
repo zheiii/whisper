@@ -271,26 +271,6 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
     };
   }, [selectedTransformationId, labeledTransformations]);
 
-  // Auto-trigger transformation if needed
-  useEffect(() => {
-    // Only run if whisper and limits are loaded, not streaming, and not already triggered
-    if (
-      !isStreaming &&
-      !isLimitsLoading &&
-      whisper &&
-      Array.isArray(whisper.transformations) &&
-      whisper.transformations.length === 0 &&
-      whisper.initialTransformationType &&
-      (apiKey || (transformationsData && transformationsData.remaining > 0))
-    ) {
-      console.log("trigger transformation", whisper.initialTransformationType);
-      // Only trigger once per mount
-      setIsStreaming(true); // Prevent double-trigger
-      handleTransform(whisper.initialTransformationType);
-    }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [whisper, isLimitsLoading, transformationsData, apiKey]);
-
   if (error || (!whisper && !isLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center">

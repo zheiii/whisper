@@ -36,7 +36,6 @@ declare global {
 }
 
 export function RecordingModal({ onClose }: RecordingModalProps) {
-  const [noteType, setNoteType] = useState("quick-note");
   const [language, setLanguage] = useLocalStorage("language", "en");
 
   const { uploadToS3 } = useS3Upload();
@@ -65,7 +64,9 @@ export function RecordingModal({ onClose }: RecordingModalProps) {
     trpc.whisper.transcribeFromS3.mutationOptions()
   );
 
-  const [isProcessing, setIsProcessing] = useState(false);
+  const [isProcessing, setIsProcessing] = useState<
+    "idle" | "uploading" | "transcribing"
+  >("idle");
   const [pendingSave, setPendingSave] = useState(false);
 
   // Check microphone permission on mount
@@ -91,7 +92,7 @@ export function RecordingModal({ onClose }: RecordingModalProps) {
       toast.error("No audio to save. Please record something first.");
       return;
     }
-    setIsProcessing(true);
+    setIsProcessing("uploading");
     try {
       // Upload to S3
       const file = new File([audioBlob], `recording-${Date.now()}.webm`, {
@@ -99,17 +100,19 @@ export function RecordingModal({ onClose }: RecordingModalProps) {
       });
       const { url } = await uploadToS3(file);
       // Call tRPC mutation
+
+      setIsProcessing("transcribing");
+
       const { id } = await transcribeMutation.mutateAsync({
         audioUrl: url,
         language,
-        noteType,
         durationSeconds: duration,
       });
       // Redirect to whisper page
       router.push(`/whispers/${id}`);
     } catch (err) {
       toast.error("Failed to transcribe audio. Please try again.");
-      setIsProcessing(false);
+      setIsProcessing("idle");
     }
   };
 
@@ -131,7 +134,7 @@ export function RecordingModal({ onClose }: RecordingModalProps) {
           <DialogTitle className="sr-only">Recording Modal</DialogTitle>
         </DialogHeader>
 
-        {isProcessing ? (
+        {isProcessing !== "idle" ? (
           <div className="flex flex-col items-center justify-center h-full gap-4 p-4">
             <img
               src="/loading.svg"
@@ -139,7 +142,9 @@ export function RecordingModal({ onClose }: RecordingModalProps) {
               className="w-8 h-8 animate-spin"
             />
             <p className="text-gray-500">
-              Uploading audio recording
+              {isProcessing === "uploading"
+                ? "Uploading audio recording"
+                : "Transcribing audio..."}
               <span className="animate-pulse">...</span>
             </p>
           </div>
@@ -148,8 +153,6 @@ export function RecordingModal({ onClose }: RecordingModalProps) {
             {!recording ? (
               <>
                 <RecordingBasics
-                  noteType={noteType}
-                  setNoteType={setNoteType}
                   language={language}
                   setLanguage={setLanguage}
                 />
@@ -212,7 +215,7 @@ export function RecordingModal({ onClose }: RecordingModalProps) {
                   startRecording();
                 }
               }}
-              disabled={isProcessing}
+              disabled={isProcessing !== "idle"}
             >
               {recording ? (
                 <>

@@ -4,7 +4,11 @@ import { PrismaClient } from "../../lib/generated/prisma";
 import { v4 as uuidv4 } from "uuid";
 import { protectedProcedure } from "../init";
 import { limitMinutes } from "@/lib/limits";
-import { togetherBaseClientWithKey } from "@/lib/apiClients";
+import {
+  togetherBaseClientWithKey,
+  togetherVercelAiClient,
+} from "@/lib/apiClients";
+import { generateText } from "ai";
 
 const prisma = new PrismaClient();
 
@@ -33,7 +37,6 @@ export const whisperRouter = t.router({
         audioUrl: z.string(),
         whisperId: z.string().optional(),
         language: z.string().optional(),
-        noteType: z.string().optional(),
         durationSeconds: z.number().min(1),
       })
     )
@@ -65,10 +68,17 @@ export const whisperRouter = t.router({
       const transcription = res.text as string;
 
       // Generate a title from the transcription (first 8 words or fallback)
-      const title = transcription
-        ? transcription.split(" ").slice(0, 8).join(" ") +
-          (transcription.split(" ").length > 8 ? "..." : "")
-        : "Untitled Whisper";
+      const { text: title } = await generateText({
+        prompt: `Generate a title for the following transcription with max of 10 words/80 characters: 
+        ${transcription}
+        
+        Only return the title, nothing else, no explanation and no quotes or followup.
+        `,
+        model: togetherVercelAiClient(ctx.togetherApiKey)(
+          "meta-llama/Llama-3.3-70B-Instruct-Turbo"
+        ),
+        maxTokens: 10,
+      });
 
       const whisperId = input.whisperId || uuidv4();
 
@@ -99,9 +109,8 @@ export const whisperRouter = t.router({
         await prisma.whisper.create({
           data: {
             id: whisperId,
-            title,
+            title: title.slice(0, 80),
             userId: ctx.auth.userId,
-            initialTransformationType: input.noteType,
             fullTranscription: transcription,
             audioTracks: {
               create: [

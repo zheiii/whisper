@@ -10,56 +10,16 @@ import {
 import { MAIN_LANGUAGES, RECORDING_TYPES } from "@/lib/utils";
 
 export const RecordingBasics = ({
-  noteType,
-  setNoteType,
   language,
   setLanguage,
   disabled,
 }: {
-  noteType: string;
-  setNoteType: (noteType: string) => void;
   language?: string;
   setLanguage?: (language: string) => void;
   disabled?: boolean;
 }) => {
   return (
     <>
-      <div className="w-full flex flex-col px-5 py-6 border-b border-gray-200">
-        <div className="flex items-center mb-2">
-          <span className="text-base font-medium text-left text-[#101828] mr-1">
-            What are you creating?
-          </span>
-          <span className="text-base font-medium text-left text-[#6a7282]">
-            [OPTIONAL]
-          </span>
-        </div>
-        <div className="w-full">
-          <Select
-            disabled={disabled}
-            value={noteType}
-            onValueChange={setNoteType}
-          >
-            <SelectTrigger className="w-full h-9 bg-gray-100 border border-[#d1d5dc] rounded-lg">
-              <SelectValue className="flex items-center" />
-            </SelectTrigger>
-            <SelectContent>
-              {RECORDING_TYPES.map((type) => (
-                <SelectItem
-                  key={type.value}
-                  value={type.value}
-                  className="flex items-center gap-2"
-                >
-                  <img
-                    src={`/recordings/${type.value}.svg`}
-                    className="size-[18px] min-w-[18px]"
-                  />
-                  <span>{type.name}</span>
-                </SelectItem>
-              ))}
-            </SelectContent>
-          </Select>
-        </div>
-      </div>
       <div className="w-full flex flex-col px-5 py-6 border-b border-gray-200">
         <div className="flex items-center mb-2">
           <span className="text-base font-medium text-left text-[#101828] mr-1">

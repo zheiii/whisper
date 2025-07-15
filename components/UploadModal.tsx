@@ -15,7 +15,6 @@ import { useTRPC } from "@/trpc/client";
 import { useMutation } from "@tanstack/react-query";
 import { RecordingBasics } from "./RecordingBasics";
 import { RecordingMinutesLeft } from "./RecordingMinutesLeft";
-import { useQuery } from "@tanstack/react-query";
 import { useTogetherApiKey } from "./TogetherApiKeyProvider";
 import useLocalStorage from "./hooks/useLocalStorage";
 import { useLimits } from "./hooks/useLimits";
@@ -33,10 +32,12 @@ const getDuration = (file: File) =>
   });
 
 export function UploadModal({ onClose }: { onClose: () => void }) {
-  const [noteType, setNoteType] = useState("quick-note");
   const [language, setLanguage] = useLocalStorage("language", "en");
 
-  const [isUploadingFile, setIsUploadingFile] = useState(false);
+  const [isProcessing, setIsProcessing] = useState<
+    "idle" | "uploading" | "transcribing"
+  >("idle");
+
   const [isDragActive, setIsDragActive] = useState(false);
   const { uploadToS3 } = useS3Upload();
   const router = useRouter();
@@ -57,7 +58,7 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
         );
         return;
       }
-      setIsUploadingFile(true);
+      setIsProcessing("uploading");
       try {
         // Run duration extraction and S3 upload in parallel
         const [duration, { url }] = await Promise.all([
@@ -65,10 +66,10 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
           uploadToS3(file),
         ]);
         // Call tRPC mutation
+        setIsProcessing("transcribing");
         const { id } = await transcribeMutation.mutateAsync({
           audioUrl: url,
           language,
-          noteType,
           durationSeconds: Math.round(duration),
         });
         router.push(`/whispers/${id}`);
@@ -89,7 +90,7 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
           <DialogTitle className="sr-only">Upload Voice Audio</DialogTitle>
         </DialogHeader>
 
-        {isUploadingFile ? (
+        {isProcessing !== "idle" ? (
           <div className="flex flex-col items-center justify-center h-full gap-4 p-4">
             <img
               src="/loading.svg"
@@ -97,18 +98,18 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
               className="w-8 h-8 animate-spin"
             />
             <p className="text-gray-500">
-              Uploading audio recording
+              {isProcessing === "uploading"
+                ? "Uploading audio recording"
+                : "Transcribing audio..."}
               <span className="animate-pulse">...</span>
             </p>
           </div>
         ) : (
           <>
             <RecordingBasics
-              noteType={noteType}
-              setNoteType={setNoteType}
               language={language}
               setLanguage={setLanguage}
-              disabled={isUploadingFile}
+              disabled={isProcessing !== "idle"}
             />
             <Dropzone
               multiple={false}

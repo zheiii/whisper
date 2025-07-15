@@ -210,7 +210,7 @@ export function Dashboard({ transcriptions }: DashboardProps) {
             >
               <img src="/microphone.svg" className="w-5 h-5 size-5" />
               New Whisper
-              <img src="/command.svg" className="w-[87px] h-[16px]" />
+              {/* <img src="/command.svg" className="w-[87px] h-[16px]" /> */}
             </Button>
           </div>
         </div>

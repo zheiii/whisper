@@ -22,8 +22,6 @@ model Whisper {
   fullTranscription String
   audioTracks       AudioTrack[]
 
-  initialTransformationType String?
-
   transformations Transformation[]
 }
 

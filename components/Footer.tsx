@@ -1,6 +1,6 @@
 export const Footer = () => {
   return (
-    <div className="flex flex-col md:flex-row justify-between gap-2 px-4 py-[9px] items-center">
+    <div className="flex flex-col md:flex-row justify-between gap-2 px-4 py-[9px] items-center self-end">
       <p className="text-xs text-center">
         <span className="text-xs text-center text-[#99a1af]">Powered by </span>
         <a
