@@ -4,7 +4,6 @@ import { PrismaClient } from "../../lib/generated/prisma";
 import { v4 as uuidv4 } from "uuid";
 import { protectedProcedure } from "../init";
 import { limitMinutes } from "@/lib/limits";
-import { fal } from "@fal-ai/client";
 import { togetherBaseClientWithKey } from "@/lib/apiClients";
 
 const prisma = new PrismaClient();
@@ -54,15 +53,6 @@ export const whisperRouter = t.router({
         throw new Error("You have exceeded your daily audio minutes limit.");
       }
 
-      // fal.config({ credentials: process.env.FAL_KEY! });
-      // const result = await fal.subscribe("fal-ai/whisper", {
-      //   input: {
-      //     audio_url: input.audioUrl,
-      //     language: (input.language as any) || undefined,
-      //   },
-      // });
-      // const transcription = result.data.text as string;
-
       const res = await togetherBaseClientWithKey(
         ctx.togetherApiKey
       ).audio.transcriptions.create({
@@ -71,8 +61,6 @@ export const whisperRouter = t.router({
         model: "openai/whisper-large-v3",
         language: input.language || "en",
       });
-
-      console.log("res", res);
 
       const transcription = res.text as string;
 
@@ -113,6 +101,7 @@ export const whisperRouter = t.router({
             id: whisperId,
             title,
             userId: ctx.auth.userId,
+            initialTransformationType: input.noteType,
             fullTranscription: transcription,
             audioTracks: {
               create: [
@@ -125,11 +114,6 @@ export const whisperRouter = t.router({
             },
           },
         });
-      }
-
-      // If noteType is present, create a transformation
-      if (input.noteType) {
-        // TODO add back logic here?
       }
       return { id: whisperId };
     }),
@@ -202,7 +186,4 @@ export const whisperRouter = t.router({
       });
       return { id: input.id };
     }),
-
-  // --- CREATE TRANSFORMATION ---
-  // Removed createTransformation mutation; now handled by /api/transform route
 });
