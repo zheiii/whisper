@@ -19,6 +19,7 @@ import {
 import { LoadingSection } from "@/components/whisper-page/LoadingSection";
 import { CustomMarkdown } from "@/components/CustomMarkdown";
 import { useTogetherApiKey } from "@/components/TogetherApiKeyProvider";
+import { useLimits } from "@/components/hooks/useLimits";
 
 export default function TranscriptionPageClient({ id }: { id: string }) {
   const router = useRouter();
@@ -47,6 +48,7 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
   const { apiKey } = useTogetherApiKey();
   const [streamingText, setStreamingText] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
+  const { transformationsData, isLoading: isLimitsLoading } = useLimits();
 
   // Helper: get all transformations from server only
   const getAllTransformations = () => {
@@ -175,9 +177,12 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
   const renderTranscription = () => {
     if (isStreaming) {
       return (
-        <div className="whitespace-pre-line rounded p-2 min-h-[120px] w-full bg-white text-slate-800 flex flex-col gap-0.5 animate-pulse">
-          <CustomMarkdown>{streamingText}</CustomMarkdown>
-        </div>
+        <>
+          {streamingText.length === 0 && <LoadingSection />}
+          <div className="mt-2 whitespace-pre-line rounded p-2 min-h-[120px] w-full bg-white text-slate-800 flex flex-col gap-0.5 animate-pulse">
+            <CustomMarkdown>{streamingText}</CustomMarkdown>
+          </div>
+        </>
       );
     }
     if (selectedTransformationId === "base") {
@@ -265,6 +270,26 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
       if (timer) clearTimeout(timer);
     };
   }, [selectedTransformationId, labeledTransformations]);
+
+  // Auto-trigger transformation if needed
+  useEffect(() => {
+    // Only run if whisper and limits are loaded, not streaming, and not already triggered
+    if (
+      !isStreaming &&
+      !isLimitsLoading &&
+      whisper &&
+      Array.isArray(whisper.transformations) &&
+      whisper.transformations.length === 0 &&
+      whisper.initialTransformationType &&
+      (apiKey || (transformationsData && transformationsData.remaining > 0))
+    ) {
+      console.log("trigger transformation", whisper.initialTransformationType);
+      // Only trigger once per mount
+      setIsStreaming(true); // Prevent double-trigger
+      handleTransform(whisper.initialTransformationType);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [whisper, isLimitsLoading, transformationsData, apiKey]);
 
   if (error || (!whisper && !isLoading)) {
     return (
