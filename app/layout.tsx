@@ -6,6 +6,7 @@ import { Header } from "@/components/Header";
 import { Toaster } from "@/components/ui/sonner";
 import { TRPCReactProvider } from "@/trpc/client";
 import { TogetherApiKeyProvider } from "@/components/TogetherApiKeyProvider";
+import { Footer } from "@/components/Footer";
 
 const raleway = Raleway({
   variable: "--font-raleway",
@@ -38,6 +39,7 @@ export default function RootLayout({
                 <Header />
                 {children}
                 <Toaster richColors />
+                <Footer />
               </div>
             </body>
           </html>
