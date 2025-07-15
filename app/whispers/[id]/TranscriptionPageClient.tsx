@@ -386,7 +386,9 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
       </header>
       <main className="py-8 mx-auto max-w-[688px] w-full">
         {isLoading ? (
-          <LoadingSection />
+          <div className="px-8">
+            <LoadingSection />
+          </div>
         ) : (
           <div className="mb-6">{renderTranscription()}</div>
         )}

@@ -23,7 +23,7 @@ function Spinner() {
         display: "flex",
         justifyContent: "center",
         alignItems: "center",
-        minHeight: "40vh",
+        minHeight: "80vh",
       }}
     >
       <img

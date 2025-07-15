@@ -37,11 +37,13 @@ export function Header() {
 
   if (!mounted) {
     // Optionally, you can return a skeleton or null while mounting
-    return null;
+    return (
+      <div className="h-[63px] w-full bg-gray-50 border-b border-gray-200" />
+    );
   }
 
   return (
-    <header className="flex items-center justify-between p-4 bg-gray-50 border-b border-gray-200">
+    <header className="min-h-[63px] flex items-center justify-between p-4 bg-gray-50 border-b border-gray-200">
       {isSingleWhisperPage ? (
         <Link href="/whispers/" className="flex items-center gap-2">
           <img
