@@ -10,12 +10,11 @@ import { TransformDropdown } from "@/components/TransformDropdown";
 import { toast } from "sonner";
 import { AutosizeTextarea } from "@/components/ui/AutoSizeTextArea";
 import {
-  Select,
-  SelectTrigger,
-  SelectValue,
-  SelectContent,
-  SelectItem,
-} from "@/components/ui/select";
+  DropdownMenu,
+  DropdownMenuTrigger,
+  DropdownMenuContent,
+  DropdownMenuItem,
+} from "@/components/ui/dropdown-menu";
 import { LoadingSection } from "@/components/whisper-page/LoadingSection";
 import { CustomMarkdown } from "@/components/CustomMarkdown";
 import { useTogetherApiKey } from "@/components/TogetherApiKeyProvider";
@@ -210,7 +209,7 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
                   },
                 }
               );
-            }, 500);
+            }, 4000); // Increased debounce to 4 seconds
           }}
           spellCheck={true}
           aria-label="Edit transcription"
@@ -313,28 +312,27 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
                     },
                   }
                 );
-              }, 500);
+              }, 4000); // Increased debounce to 4 seconds
             }}
             aria-label="Edit title"
             spellCheck={true}
             disabled={titleMutation.status === "pending"}
           />
-          <Select
-            value={selectedTransformationId || "base"}
-            onValueChange={async (val) => {
-              setSelectedTransformationId(val);
-            }}
-            disabled={isStreaming || isCurrentGenerating}
-          >
-            <SelectTrigger
-              className={`flex justify-between items-center relative overflow-hidden gap-2 px-3 py-[5px] rounded-lg border-[0.5px] border-[#d1d5dc] min-w-[120px] ${
-                isStreaming || isCurrentGenerating
-                  ? "bg-slate-100 text-slate-400"
-                  : "bg-white text-[#364153]"
-              }`}
+          <DropdownMenu modal={false}>
+            <DropdownMenuTrigger
+              asChild
+              disabled={isStreaming || isCurrentGenerating}
             >
-              <SelectValue>
-                <span className="text-sm text-center">
+              <button
+                className={`flex justify-between items-center relative overflow-hidden gap-2 px-3 py-[5px] rounded-lg border-[0.5px] border-[#d1d5dc] min-h-[34px] min-w-[100px] max-w-[120px] w-full text-sm font-medium ${
+                  isStreaming || isCurrentGenerating
+                    ? "bg-slate-100 text-slate-400"
+                    : "bg-white text-[#364153]"
+                }`}
+                disabled={isStreaming || isLoading}
+                type="button"
+              >
+                <span className="text-sm text-left w-full">
                   {isStreaming || isCurrentGenerating
                     ? "Generating..."
                     : (() => {
@@ -346,22 +344,49 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
                         return t ? t.label : "Transcript";
                       })()}
                 </span>
-              </SelectValue>
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="base">Transcript</SelectItem>
+                <span className="ml-2 flex items-center">
+                  <svg
+                    width="10"
+                    height="10"
+                    viewBox="0 0 10 10"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg"
+                  >
+                    <path
+                      fillRule="evenodd"
+                      clipRule="evenodd"
+                      d="M8.70628 2.92973C8.94592 3.16937 8.94592 3.5579 8.70628 3.79754L5.43355 7.07027C5.19391 7.30991 4.80538 7.30991 4.56574 7.07027L1.29301 3.79754C1.05337 3.5579 1.05337 3.16937 1.29301 2.92973C1.53265 2.69009 1.92118 2.69009 2.16082 2.92973L4.99964 5.76855L7.83847 2.92973C8.07811 2.69009 8.46664 2.69009 8.70628 2.92973Z"
+                      fill="#D1D5DC"
+                    />
+                  </svg>
+                </span>
+              </button>
+            </DropdownMenuTrigger>
+            <DropdownMenuContent align="start" className="min-w-[120px]">
+              <DropdownMenuItem
+                onSelect={() => setSelectedTransformationId("base")}
+                disabled={isStreaming || isCurrentGenerating}
+                className="text-sm"
+              >
+                Transcript
+              </DropdownMenuItem>
               {labeledTransformations.map((t) => (
-                <SelectItem key={t.id} value={t.id}>
+                <DropdownMenuItem
+                  key={t.id}
+                  onSelect={() => setSelectedTransformationId(t.id)}
+                  disabled={isStreaming || isCurrentGenerating}
+                  className="text-sm flex items-center gap-2"
+                >
                   {t.label}
                   {t.isGenerating && (
                     <span className="ml-2 animate-pulse text-xs text-slate-400">
                       ...
                     </span>
                   )}
-                </SelectItem>
+                </DropdownMenuItem>
               ))}
-            </SelectContent>
-          </Select>
+            </DropdownMenuContent>
+          </DropdownMenu>
         </div>
       </header>
       <main className="py-8 mx-auto max-w-[688px] w-full">
@@ -370,7 +395,7 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
             <LoadingSection />
           </div>
         ) : (
-          <div className="mb-6">{renderTranscription()}</div>
+          <div className="mb-6 mx-8">{renderTranscription()}</div>
         )}
       </main>
       <footer className="fixed bottom-0 left-0 w-full md:left-1/2 md:-translate-x-1/2 bg-white border-t md:border md:rounded-2xl border-slate-200 px-4 py-3 flex flex-col md:flex-row items-center z-50 max-w-[730px] gap-2 justify-center md:mb-4">

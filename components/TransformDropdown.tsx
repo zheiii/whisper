@@ -18,7 +18,7 @@ export function TransformDropdown({
   const { isLoading, transformationsData } = useLimits();
 
   return (
-    <DropdownMenu>
+    <DropdownMenu modal={false}>
       <DropdownMenuTrigger
         asChild
         disabled={
