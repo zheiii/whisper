@@ -20,6 +20,8 @@ import { CustomMarkdown } from "@/components/CustomMarkdown";
 import { useTogetherApiKey } from "@/components/TogetherApiKeyProvider";
 import { useLimits } from "@/components/hooks/useLimits";
 
+const DELAY_SAVE = 10000; // 10 seconds
+
 export default function TranscriptionPageClient({ id }: { id: string }) {
   const router = useRouter();
   const trpc = useTRPC();
@@ -209,7 +211,7 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
                   },
                 }
               );
-            }, 4000); // Increased debounce to 4 seconds
+            }, DELAY_SAVE); // Increased debounce to 4 seconds
           }}
           spellCheck={true}
           aria-label="Edit transcription"
@@ -312,7 +314,7 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
                     },
                   }
                 );
-              }, 4000); // Increased debounce to 4 seconds
+              }, DELAY_SAVE); // Increased debounce to 4 seconds
             }}
             aria-label="Edit title"
             spellCheck={true}
