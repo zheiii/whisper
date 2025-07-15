@@ -19,7 +19,7 @@ import { useAudioRecording } from "./hooks/useAudioRecording";
 import { useS3Upload } from "next-s3-upload";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLimits } from "./hooks/useLimits";
 
 interface RecordingModalProps {
@@ -64,6 +64,8 @@ export function RecordingModal({ onClose }: RecordingModalProps) {
     trpc.whisper.transcribeFromS3.mutationOptions()
   );
 
+  const queryClient = useQueryClient();
+
   const [isProcessing, setIsProcessing] = useState<
     "idle" | "uploading" | "transcribing"
   >("idle");
@@ -107,6 +109,10 @@ export function RecordingModal({ onClose }: RecordingModalProps) {
         audioUrl: url,
         language,
         durationSeconds: duration,
+      });
+      // Invalidate dashboard query
+      await queryClient.invalidateQueries({
+        queryKey: trpc.whisper.listWhispers.queryKey(),
       });
       // Redirect to whisper page
       router.push(`/whispers/${id}`);

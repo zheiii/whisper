@@ -12,7 +12,7 @@ import { toast } from "sonner";
 import { useS3Upload } from "next-s3-upload";
 import { useRouter } from "next/navigation";
 import { useTRPC } from "@/trpc/client";
-import { useMutation } from "@tanstack/react-query";
+import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { RecordingBasics } from "./RecordingBasics";
 import { RecordingMinutesLeft } from "./RecordingMinutesLeft";
 import { useTogetherApiKey } from "./TogetherApiKeyProvider";
@@ -47,6 +47,7 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
   const transcribeMutation = useMutation(
     trpc.whisper.transcribeFromS3.mutationOptions()
   );
+  const queryClient = useQueryClient();
   const { minutesData, isLoading } = useLimits();
 
   const handleDrop = useCallback(
@@ -71,6 +72,10 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
           audioUrl: url,
           language,
           durationSeconds: Math.round(duration),
+        });
+        // Invalidate dashboard query
+        await queryClient.invalidateQueries({
+          queryKey: trpc.whisper.listWhispers.queryKey(),
         });
         router.push(`/whispers/${id}`);
       } catch (err) {
