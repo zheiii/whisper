@@ -288,7 +288,7 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-[calc(100vh-60px)] bg-white">
       <header className="bg-slate-50 border-b border-slate-200 px-6 py-4 flex items-center justify-between">
         <div className="mx-auto max-w-[688px] w-full flex items-center gap-4">
           <input

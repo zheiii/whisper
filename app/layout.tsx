@@ -35,7 +35,7 @@ export default function RootLayout({
         <TRPCReactProvider>
           <html lang="en">
             <body className={`${raleway.variable} antialiased`}>
-              <div className="min-h-screen bg-white">
+              <div className="min-h-screen bg-white flex flex-col">
                 <Header />
                 {children}
                 <Toaster richColors />

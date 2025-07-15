@@ -93,7 +93,7 @@ export function Dashboard({ transcriptions }: DashboardProps) {
 
   return (
     <>
-      <div className=" mx-auto">
+      <div className="flex-1 h-full mx-auto w-full">
         <div className="mb-8">
           <div className="mx-auto max-w-[729px] w-full md:rounded-xl bg-white border-b-[0.7px] md:border-[0.7px] border-gray-200 md:border-[#d1d5dc] px-6 py-5 flex flex-col gap-3 md:my-4 ">
             <h1 className="text-xl font-semibold text-left text-[#101828]">
