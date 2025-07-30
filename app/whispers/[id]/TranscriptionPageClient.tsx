@@ -20,7 +20,7 @@ import { CustomMarkdown } from "@/components/CustomMarkdown";
 import { useTogetherApiKey } from "@/components/TogetherApiKeyProvider";
 import { useLimits } from "@/components/hooks/useLimits";
 
-const DELAY_SAVE = 10000; // 10 seconds
+const DELAY_SAVE = 7_000; // 7 seconds
 
 export default function TranscriptionPageClient({ id }: { id: string }) {
   const router = useRouter();
