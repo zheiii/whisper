@@ -1,0 +1,24 @@
+{
+    "id": "usewhisper",
+    "display": "standalone",
+    "name": "Whisper",
+    "short_name": "Whisper",
+    "theme_color": "#ffffff",
+    "background_color": "#ffffff",
+    "description": "Convert your thoughts into text by voice with Whisper",
+    "start_url": "/whisper",
+    "icons": [
+      {
+        "src": "/icons/512.png",
+        "sizes": "512x512",
+        "type": "image/png",
+        "purpose": "any maskable"
+      },
+      {
+        "src": "/icons/1024.png",
+        "sizes": "1024x1024",
+        "type": "image/png",
+        "purpose": "any maskable"
+      }
+    ]
+  }

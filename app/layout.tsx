@@ -20,6 +20,15 @@ export const metadata: Metadata = {
   openGraph: {
     images: "https://usewhisper.io/og.jpg",
   },
+  manifest: "/site.webmanifest",
+  icons: {
+    apple: "/icons/512.png",
+  },
+  appleWebApp: {
+    capable: true,
+    title: "Whisper",
+    statusBarStyle: "default",
+  },
 };
 
 export default function RootLayout({
