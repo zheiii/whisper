@@ -2,8 +2,8 @@
 
 import React, { useEffect, useState, useContext, createContext } from "react";
 
-// Context for Together API Key
-const TogetherApiKeyContext = createContext<
+// Context for OpenAI API Key
+const OpenAIApiKeyContext = createContext<
   | {
       apiKey: string | undefined;
       setApiKey: (key: string | undefined) => void;
@@ -11,7 +11,7 @@ const TogetherApiKeyContext = createContext<
   | undefined
 >(undefined);
 
-export function TogetherApiKeyProvider({
+export function OpenAIApiKeyProvider({
   children,
 }: {
   children: React.ReactNode;
@@ -19,31 +19,31 @@ export function TogetherApiKeyProvider({
   const [apiKey, setApiKeyState] = useState<string | undefined>(undefined);
 
   useEffect(() => {
-    setApiKeyState(sessionStorage.getItem("togetherApiKey") || undefined);
+    setApiKeyState(sessionStorage.getItem("openaiApiKey") || undefined);
   }, []);
 
   // Sync to sessionStorage and notify listeners
   const setApiKey = (key: string | undefined) => {
     setApiKeyState(key);
     if (key) {
-      sessionStorage.setItem("togetherApiKey", key);
+      sessionStorage.setItem("openaiApiKey", key);
     } else {
-      sessionStorage.removeItem("togetherApiKey");
+      sessionStorage.removeItem("openaiApiKey");
     }
   };
 
   return (
-    <TogetherApiKeyContext.Provider value={{ apiKey, setApiKey }}>
+    <OpenAIApiKeyContext.Provider value={{ apiKey, setApiKey }}>
       {children}
-    </TogetherApiKeyContext.Provider>
+    </OpenAIApiKeyContext.Provider>
   );
 }
 
-export function useTogetherApiKey() {
-  const context = useContext(TogetherApiKeyContext);
+export function useOpenAIApiKey() {
+  const context = useContext(OpenAIApiKeyContext);
   if (!context) {
     throw new Error(
-      "useTogetherApiKey must be used within a TogetherApiKeyProvider"
+      "useOpenAIApiKey must be used within a OpenAIApiKeyProvider"
     );
   }
   return context;

@@ -1,11 +1,11 @@
 import { useTRPC } from "@/trpc/client";
 import { useUser } from "@clerk/nextjs";
 import { useQuery } from "@tanstack/react-query";
-import { useTogetherApiKey } from "../TogetherApiKeyProvider";
+import { useOpenAIApiKey } from "../OpenAIApiKeyProvider";
 
 export const useLimits = () => {
   const { user } = useUser();
-  const { apiKey } = useTogetherApiKey();
+  const { apiKey } = useOpenAIApiKey();
 
   const isBYOK = !!apiKey;
 

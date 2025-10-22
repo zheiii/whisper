@@ -5,7 +5,7 @@ import "./globals.css";
 import { Header } from "@/components/Header";
 import { Toaster } from "@/components/ui/sonner";
 import { TRPCReactProvider } from "@/trpc/client";
-import { TogetherApiKeyProvider } from "@/components/TogetherApiKeyProvider";
+import { OpenAIApiKeyProvider } from "@/components/OpenAIApiKeyProvider";
 import { Footer } from "@/components/Footer";
 import PlausibleProvider from "next-plausible";
 
@@ -41,7 +41,7 @@ export default function RootLayout({
   // Place a ClientHeader component below
   return (
     <ClerkProvider>
-      <TogetherApiKeyProvider>
+      <OpenAIApiKeyProvider>
         <TRPCReactProvider>
           <html lang="en">
             <head>
@@ -57,7 +57,7 @@ export default function RootLayout({
             </body>
           </html>
         </TRPCReactProvider>
-      </TogetherApiKeyProvider>
+      </OpenAIApiKeyProvider>
     </ClerkProvider>
   );
 }

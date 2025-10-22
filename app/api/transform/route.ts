@@ -1,7 +1,6 @@
 import { NextRequest } from "next/server";
 import { PrismaClient } from "@/lib/generated/prisma";
-import { streamText } from "ai";
-import { togetherVercelAiClient } from "@/lib/apiClients";
+import { openaiClientWithKey } from "@/lib/apiClients";
 import { RECORDING_TYPES } from "@/lib/utils";
 import { getAuth } from "@clerk/nextjs/server";
 
@@ -18,8 +17,8 @@ export async function POST(req: NextRequest) {
       status: 401,
     });
   }
-  // Optionally get Together API key from header
-  const apiKey = req.headers.get("TogetherAPIToken") || undefined;
+  // Optionally get OpenAI API key from header
+  const apiKey = req.headers.get("OpenAIAPIToken") || undefined;
 
   // Find whisper
   const whisper = await prisma.whisper.findUnique({ where: { id: whisperId } });
@@ -72,32 +71,45 @@ export async function POST(req: NextRequest) {
   `;
 
   // Start streaming
-  const aiClient = togetherVercelAiClient(apiKey);
-  const { textStream } = streamText({
-    model: aiClient("meta-llama/Meta-Llama-3-70B-Instruct-Turbo"),
-    prompt,
-  });
-
+  const openaiClient = openaiClientWithKey(apiKey);
+  
   // Create a ReadableStream to send id first, then stream text
   let fullText = "";
   const encoder = new TextEncoder();
   const stream = new ReadableStream({
     async start(controller) {
-      // Send the id as a JSON object first
-      controller.enqueue(
-        encoder.encode(JSON.stringify({ id: transformation.id }) + "\n")
-      );
-      // Stream the text
-      for await (const chunk of textStream) {
-        fullText += chunk;
-        controller.enqueue(encoder.encode(chunk));
+      try {
+        // Send the id as a JSON object first
+        controller.enqueue(
+          encoder.encode(JSON.stringify({ id: transformation.id }) + "\n")
+        );
+
+        // Create completion with streaming
+        const completion = await openaiClient.chat.completions.create({
+          model: "gpt-4o-mini",
+          messages: [{ role: "user", content: prompt }],
+          stream: true,
+        });
+
+        // Stream the text
+        for await (const chunk of completion) {
+          const content = chunk.choices[0]?.delta?.content || "";
+          if (content) {
+            fullText += content;
+            controller.enqueue(encoder.encode(content));
+          }
+        }
+
+        // Update DB at the end
+        await prisma.transformation.update({
+          where: { id: transformation.id },
+          data: { text: fullText, isGenerating: false },
+        });
+        controller.close();
+      } catch (error) {
+        console.error("Streaming error:", error);
+        controller.error(error);
       }
-      // Update DB at the end
-      await prisma.transformation.update({
-        where: { id: transformation.id },
-        data: { text: fullText, isGenerating: false },
-      });
-      controller.close();
     },
     cancel() {},
   });

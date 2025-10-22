@@ -1,41 +1,29 @@
-import { createTogetherAI } from "@ai-sdk/togetherai";
-import { Together } from "together-ai";
+import OpenAI from "openai";
 
 const APP_NAME_HELICONE = "whisper-app";
 
-export const togetheraiClient = createTogetherAI({
-  apiKey: process.env.TOGETHER_API_KEY ?? "",
-  baseURL: "https://together.helicone.ai/v1",
-  headers: {
+export const openaiClient = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY ?? "",
+  baseURL: "https://oai.helicone.ai/v1",
+  defaultHeaders: {
     "Helicone-Auth": `Bearer ${process.env.HELICONE_API_KEY}`,
     "Helicone-Property-AppName": APP_NAME_HELICONE,
   },
 });
 
-// Dynamic TogetherAI client for client-side use
-export function togetherVercelAiClient(apiKey?: string) {
-  return createTogetherAI({
-    apiKey: apiKey || process.env.TOGETHER_API_KEY || "",
-    baseURL: "https://together.helicone.ai/v1",
-    headers: {
-      "Helicone-Auth": `Bearer ${process.env.HELICONE_API_KEY}`,
-      "Helicone-Property-AppName": APP_NAME_HELICONE,
-    },
-  });
-}
-
-export function togetherBaseClientWithKey(apiKey?: string) {
-  const baseSDKOptions: ConstructorParameters<typeof Together>[0] = {
-    apiKey: apiKey || process.env.TOGETHER_API_KEY,
+// Dynamic OpenAI client for client-side use
+export function openaiClientWithKey(apiKey?: string) {
+  const baseOptions: ConstructorParameters<typeof OpenAI>[0] = {
+    apiKey: apiKey || process.env.OPENAI_API_KEY || "",
   };
 
   if (process.env.HELICONE_API_KEY) {
-    baseSDKOptions.baseURL = "https://together.helicone.ai/v1";
-    baseSDKOptions.defaultHeaders = {
+    baseOptions.baseURL = "https://oai.helicone.ai/v1";
+    baseOptions.defaultHeaders = {
       "Helicone-Auth": `Bearer ${process.env.HELICONE_API_KEY}`,
-      "Helicone-Property-Appname": APP_NAME_HELICONE,
+      "Helicone-Property-AppName": APP_NAME_HELICONE,
     };
   }
 
-  return new Together(baseSDKOptions);
+  return new OpenAI(baseOptions);
 }

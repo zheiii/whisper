@@ -12,7 +12,7 @@ import { cn } from "@/lib/utils";
 import { RecordingBasics } from "./RecordingBasics";
 import { useTRPC } from "@/trpc/client";
 import { RecordingMinutesLeft } from "./RecordingMinutesLeft";
-import { useTogetherApiKey } from "./TogetherApiKeyProvider";
+import { useOpenAIApiKey } from "./OpenAIApiKeyProvider";
 import useLocalStorage from "./hooks/useLocalStorage";
 import { AudioWaveform } from "./AudioWaveform";
 import { useAudioRecording } from "./hooks/useAudioRecording";
@@ -54,7 +54,7 @@ export function RecordingModal({ onClose }: RecordingModalProps) {
   } = useAudioRecording();
 
   const trpc = useTRPC();
-  const { apiKey } = useTogetherApiKey();
+  const { apiKey } = useOpenAIApiKey();
   const isBYOK = !!apiKey;
 
   const { isLoading, minutesData } = useLimits();

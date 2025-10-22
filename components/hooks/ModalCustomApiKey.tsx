@@ -8,7 +8,7 @@ import {
 } from "@/components/ui/dialog";
 import { useSearchParams, useRouter, usePathname } from "next/navigation";
 import { useCallback, useState, useRef, useEffect } from "react";
-import { useTogetherApiKey } from "../TogetherApiKeyProvider";
+import { useOpenAIApiKey } from "../OpenAIApiKeyProvider";
 import { toast } from "sonner";
 import { useTRPC } from "@/trpc/client";
 import { useQuery } from "@tanstack/react-query";
@@ -21,8 +21,8 @@ export const ModalCustomApiKey = () => {
 
   const isOpen = searchParams.get("customKey") === "true";
 
-  const { apiKey, setApiKey } = useTogetherApiKey();
-  const [togetherApiKey, setTogetherApiKey] = useState("");
+  const { apiKey, setApiKey } = useOpenAIApiKey();
+  const [openaiApiKey, setOpenaiApiKey] = useState("");
   const [isValidating, setIsValidating] = useState(false);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
   const trpc = useTRPC();
@@ -33,7 +33,7 @@ export const ModalCustomApiKey = () => {
   );
 
   useEffect(() => {
-    setTogetherApiKey(apiKey || "");
+    setOpenaiApiKey(apiKey || "");
   }, [apiKey]);
 
   // Remove customKey from the URL
@@ -68,7 +68,7 @@ export const ModalCustomApiKey = () => {
 
         if (errorMessage.startsWith("Invalid API key")) {
           setApiKey("");
-          setTogetherApiKey("");
+          setOpenaiApiKey("");
         }
         return false;
       }
@@ -79,7 +79,7 @@ export const ModalCustomApiKey = () => {
 
   const handleApiKeyChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    setTogetherApiKey(value);
+    setOpenaiApiKey(value);
 
     if (value.length === 0) {
       setApiKey("");
@@ -132,7 +132,7 @@ export const ModalCustomApiKey = () => {
                 type="password"
                 className="w-full h-9 flex items-center overflow-hidden rounded-lg bg-white border border-[#99a1af] px-3 text-base placeholder:text-[#99a1af] text-[#4a5565] pr-10"
                 placeholder="API Key"
-                value={togetherApiKey}
+                value={openaiApiKey}
                 onChange={handleApiKeyChange}
                 autoComplete="off"
               />

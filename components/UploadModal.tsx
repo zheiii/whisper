@@ -15,7 +15,7 @@ import { useTRPC } from "@/trpc/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { RecordingBasics } from "./RecordingBasics";
 import { RecordingMinutesLeft } from "./RecordingMinutesLeft";
-import { useTogetherApiKey } from "./TogetherApiKeyProvider";
+import { useOpenAIApiKey } from "./OpenAIApiKeyProvider";
 import useLocalStorage from "./hooks/useLocalStorage";
 import { useLimits } from "./hooks/useLimits";
 
@@ -42,7 +42,7 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
   const { uploadToS3 } = useS3Upload();
   const router = useRouter();
   const trpc = useTRPC();
-  const { apiKey } = useTogetherApiKey();
+  const { apiKey } = useOpenAIApiKey();
   const isBYOK = !!apiKey;
   const transcribeMutation = useMutation(
     trpc.whisper.transcribeFromS3.mutationOptions()

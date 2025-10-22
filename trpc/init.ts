@@ -7,11 +7,11 @@ import { auth } from "@clerk/nextjs/server";
 export async function createTRPCContext(opts?: { req?: NextRequest }) {
   // Get Clerk auth object
   const clerkAuth = await auth();
-  let togetherApiKey: string | undefined = undefined;
+  let openaiApiKey: string | undefined = undefined;
   if (opts?.req) {
-    togetherApiKey = opts.req.headers.get("TogetherAPIToken") || undefined;
+    openaiApiKey = opts.req.headers.get("OpenAIAPIToken") || undefined;
   }
-  return { auth: clerkAuth, togetherApiKey };
+  return { auth: clerkAuth, openaiApiKey };
 }
 
 export const t = initTRPC.context<typeof createTRPCContext>().create();

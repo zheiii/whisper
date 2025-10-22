@@ -1,5 +1,4 @@
-import { togetherVercelAiClient } from "@/lib/apiClients";
-import { generateText } from "ai";
+import { openaiClientWithKey } from "@/lib/apiClients";
 
 export async function POST(request: Request) {
   const { apiKey } = await request.json();
@@ -12,11 +11,11 @@ export async function POST(request: Request) {
   }
 
   try {
-    const customClient = togetherVercelAiClient(apiKey);
+    const customClient = openaiClientWithKey(apiKey);
     // Make a simple LLM call to validate the API key
-    await generateText({
-      model: customClient("Qwen/Qwen2.5-72B-Instruct-Turbo"),
-      maxTokens: 100,
+    await customClient.chat.completions.create({
+      model: "gpt-4o-mini",
+      max_tokens: 10,
       messages: [
         {
           role: "user",

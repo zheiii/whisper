@@ -4,11 +4,7 @@ import { PrismaClient } from "../../lib/generated/prisma";
 import { v4 as uuidv4 } from "uuid";
 import { protectedProcedure } from "../init";
 import { limitMinutes } from "@/lib/limits";
-import {
-  togetherBaseClientWithKey,
-  togetherVercelAiClient,
-} from "@/lib/apiClients";
-import { generateText } from "ai";
+import { openaiClientWithKey } from "@/lib/apiClients";
 
 const prisma = new PrismaClient();
 
@@ -48,7 +44,7 @@ export const whisperRouter = t.router({
 
       const limitResult = await limitMinutes({
         clerkUserId: ctx.auth.userId,
-        isBringingKey: !!ctx.togetherApiKey,
+        isBringingKey: !!ctx.openaiApiKey,
         minutes,
       });
 
@@ -56,29 +52,38 @@ export const whisperRouter = t.router({
         throw new Error("You have exceeded your daily audio minutes limit.");
       }
 
-      const res = await togetherBaseClientWithKey(
-        ctx.togetherApiKey
+      // Fetch the audio file from URL and create transcription
+      const audioResponse = await fetch(input.audioUrl);
+      if (!audioResponse.ok) {
+        throw new Error("Failed to fetch audio file");
+      }
+      
+      const audioBuffer = await audioResponse.arrayBuffer();
+      const audioFile = new File([audioBuffer], "audio.wav", { type: "audio/wav" });
+
+      const transcription = await openaiClientWithKey(
+        ctx.openaiApiKey
       ).audio.transcriptions.create({
-        // @ts-ignore: Together API accepts file URL as string, even if types do not allow
-        file: input.audioUrl,
-        model: "openai/whisper-large-v3",
-        language: input.language || "en",
+        file: audioFile,
+        model: "whisper-1",
       });
 
-      const transcription = res.text as string;
+      const transcriptionText = transcription.text;
 
       // Generate a title from the transcription (first 8 words or fallback)
-      const { text: title } = await generateText({
-        prompt: `Generate a title for the following transcription with max of 10 words/80 characters: 
-        ${transcription}
-        
-        Only return the title, nothing else, no explanation and no quotes or followup.
-        `,
-        model: togetherVercelAiClient(ctx.togetherApiKey)(
-          "meta-llama/Llama-3.3-70B-Instruct-Turbo"
-        ),
-        maxTokens: 10,
+      const completion = await openaiClientWithKey(ctx.openaiApiKey).chat.completions.create({
+        model: "gpt-4o-mini",
+        messages: [{
+          role: "user",
+          content: `Generate a title for the following transcription with max of 10 words/80 characters:
+          ${transcriptionText}
+          
+          Only return the title, nothing else, no explanation and no quotes or followup.`
+        }],
+        max_tokens: 10,
       });
+      
+      const title = completion.choices[0]?.message?.content || "Untitled";
 
       const whisperId = input.whisperId || uuidv4();
 
@@ -92,7 +97,7 @@ export const whisperRouter = t.router({
         await prisma.audioTrack.create({
           data: {
             fileUrl: input.audioUrl,
-            partialTranscription: transcription,
+            partialTranscription: transcriptionText,
             whisperId: input.whisperId,
             language: input.language,
           },
@@ -101,7 +106,7 @@ export const whisperRouter = t.router({
         await prisma.whisper.update({
           where: { id: input.whisperId },
           data: {
-            fullTranscription: whisper.fullTranscription + "\n" + transcription,
+            fullTranscription: whisper.fullTranscription + "\n" + transcriptionText,
           },
         });
       } else {
@@ -111,12 +116,12 @@ export const whisperRouter = t.router({
             id: whisperId,
             title: title.slice(0, 80),
             userId: ctx.auth.userId,
-            fullTranscription: transcription,
+            fullTranscription: transcriptionText,
             audioTracks: {
               create: [
                 {
                   fileUrl: input.audioUrl,
-                  partialTranscription: transcription,
+                  partialTranscription: transcriptionText,
                   language: input.language,
                 },
               ],

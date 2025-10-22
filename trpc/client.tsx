@@ -6,7 +6,7 @@ import { createTRPCContext } from "@trpc/tanstack-react-query";
 import { useMemo } from "react";
 import { makeQueryClient } from "./query-client";
 import type { AppRouter } from "./routers/_app";
-import { useTogetherApiKey } from "../components/TogetherApiKeyProvider";
+import { useOpenAIApiKey } from "../components/OpenAIApiKeyProvider";
 
 export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
 
@@ -36,7 +36,7 @@ export function TRPCReactProvider(
   }>
 ) {
   const queryClient = getQueryClient();
-  const { apiKey } = useTogetherApiKey();
+  const { apiKey } = useOpenAIApiKey();
   const trpcClient = useMemo(
     () =>
       createTRPCClient<AppRouter>({
@@ -45,7 +45,7 @@ export function TRPCReactProvider(
             // transformer: superjson, // Uncomment if you use superjson
             url: getUrl(),
             headers: () => {
-              return apiKey ? { TogetherAPIToken: apiKey } : {};
+              return apiKey ? { OpenAIAPIToken: apiKey } : {};
             },
           }),
         ],
