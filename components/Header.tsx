@@ -3,14 +3,14 @@
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import React from "react";
 import { Button } from "./ui/button";
-import {
-  SignedIn,
-  SignedOut,
-  SignInButton,
-  SignUpButton,
-  UserButton,
-  useUser,
-} from "@clerk/nextjs";
+// import {
+//   SignedIn,
+//   SignedOut,
+//   SignInButton,
+//   SignUpButton,
+//   UserButton,
+//   useUser,
+// } from "@clerk/nextjs";
 import Link from "next/link";
 import { ModalCustomApiKey } from "./hooks/ModalCustomApiKey";
 import { toast } from "sonner";
@@ -19,7 +19,8 @@ import { useLimits } from "./hooks/useLimits";
 
 export function Header() {
   const pathname = usePathname();
-  const { user } = useUser();
+  // Simulate authenticated user
+  const user = { id: "temp-user-id" };
   const [mounted, setMounted] = React.useState(false);
   const { apiKey } = useOpenAIApiKey();
 
@@ -68,15 +69,16 @@ export function Header() {
         </Link>
       )}
       <div className="flex items-center gap-2">
-        <SignedOut>
+        {/* Simulate always signed in for now */}
+        {/* <SignedOut>
           <SignInButton>
             <Button variant="ghost">Login</Button>
           </SignInButton>
           <SignUpButton>
             <Button className="font-medium">Sign up</Button>
           </SignUpButton>
-        </SignedOut>
-        <SignedIn>
+        </SignedOut> */}
+        {/* <SignedIn> */}
           <Button
             className="w-[51px] h-[30px] relative rounded-lg bg-white hover:bg-gray-50 border-[0.5px] border-gray-200"
             onClick={() => {
@@ -101,7 +103,11 @@ export function Header() {
             </p>
           </Button>
           <KeyButton />
-          <UserButton
+          {/* Temporary user avatar instead of UserButton */}
+          <div className="w-8 h-8 bg-gray-300 rounded-lg flex items-center justify-center">
+            <span className="text-sm font-medium">U</span>
+          </div>
+          {/* <UserButton
             appearance={{
               elements: {
                 avatarBox: {
@@ -109,8 +115,8 @@ export function Header() {
                 },
               },
             }}
-          />
-        </SignedIn>
+          /> */}
+        {/* </SignedIn> */}
       </div>
       <ModalCustomApiKey />
     </header>

@@ -1,10 +1,12 @@
 import { t } from "../init";
 import { z } from "zod";
-import { PrismaClient } from "../../lib/generated/prisma";
+import { PrismaClient } from "@/lib/generated/prisma";
 import { v4 as uuidv4 } from "uuid";
 import { protectedProcedure } from "../init";
 import { limitMinutes } from "@/lib/limits";
 import { openaiClientWithKey } from "@/lib/apiClients";
+import { readFile } from "fs/promises";
+import { join } from "path";
 
 const prisma = new PrismaClient();
 
@@ -27,7 +29,7 @@ export const whisperRouter = t.router({
       // duration: ... // If you want to add duration, you can extend the model or calculate from audioTracks
     }));
   }),
-  transcribeFromS3: protectedProcedure
+  transcribeFromLocal: protectedProcedure
     .input(
       z.object({
         audioUrl: z.string(),
@@ -52,14 +54,23 @@ export const whisperRouter = t.router({
         throw new Error("You have exceeded your daily audio minutes limit.");
       }
 
-      // Fetch the audio file from URL and create transcription
-      const audioResponse = await fetch(input.audioUrl);
-      if (!audioResponse.ok) {
-        throw new Error("Failed to fetch audio file");
+      // Read the audio file from local filesystem
+      const filePath = join(process.cwd(), "public", input.audioUrl);
+      let audioBuffer: Buffer;
+      
+      try {
+        audioBuffer = await readFile(filePath);
+      } catch (error) {
+        throw new Error("Failed to read audio file from local storage");
       }
       
-      const audioBuffer = await audioResponse.arrayBuffer();
-      const audioFile = new File([audioBuffer], "audio.wav", { type: "audio/wav" });
+      // Determine file type from URL extension
+      const fileExtension = input.audioUrl.split('.').pop()?.toLowerCase() || 'wav';
+      const mimeType = fileExtension === 'mp3' ? 'audio/mpeg' :
+                      fileExtension === 'm4a' ? 'audio/mp4' :
+                      'audio/wav';
+      
+      const audioFile = new File([audioBuffer], `audio.${fileExtension}`, { type: mimeType });
 
       const transcription = await openaiClientWithKey(
         ctx.openaiApiKey

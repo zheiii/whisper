@@ -9,7 +9,6 @@ import {
 import Dropzone from "react-dropzone";
 import React, { useCallback, useState } from "react";
 import { toast } from "sonner";
-import { useS3Upload } from "next-s3-upload";
 import { useRouter } from "next/navigation";
 import { useTRPC } from "@/trpc/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -39,16 +38,32 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
   >("idle");
 
   const [isDragActive, setIsDragActive] = useState(false);
-  const { uploadToS3 } = useS3Upload();
   const router = useRouter();
   const trpc = useTRPC();
   const { apiKey } = useOpenAIApiKey();
   const isBYOK = !!apiKey;
   const transcribeMutation = useMutation(
-    trpc.whisper.transcribeFromS3.mutationOptions()
+    trpc.whisper.transcribeFromLocal.mutationOptions()
   );
   const queryClient = useQueryClient();
   const { minutesData, isLoading } = useLimits();
+
+  // Local upload function
+  const uploadToLocal = async (file: File): Promise<{ url: string }> => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch("/api/local-upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to upload file");
+    }
+
+    return await response.json();
+  };
 
   const handleDrop = useCallback(
     async (acceptedFiles: File[]) => {
@@ -61,14 +76,14 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
       }
       setIsProcessing("uploading");
       try {
-        // Run duration extraction and S3 upload in parallel
+        // Run duration extraction and local upload in parallel
         const [duration, { url }] = await Promise.all([
           getDuration(file),
-          uploadToS3(file),
+          uploadToLocal(file),
         ]);
         // Call tRPC mutation
         setIsProcessing("transcribing");
-        const { id } = await transcribeMutation.mutateAsync({
+        const result = await transcribeMutation.mutateAsync({
           audioUrl: url,
           language,
           durationSeconds: Math.round(duration),
@@ -77,12 +92,12 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
         await queryClient.invalidateQueries({
           queryKey: trpc.whisper.listWhispers.queryKey(),
         });
-        router.push(`/whispers/${id}`);
+        router.push(`/whispers/${result.id}`);
       } catch (err) {
         toast.error("Failed to transcribe audio. Please try again.");
       }
     },
-    [uploadToS3, transcribeMutation, router]
+    [transcribeMutation, router, queryClient, trpc, language]
   );
 
   return (

@@ -1,43 +1,19 @@
-import { Ratelimit } from "@upstash/ratelimit";
-import { Redis } from "@upstash/redis";
-import { clerkClient } from "@clerk/nextjs/server";
+// import { Ratelimit } from "@upstash/ratelimit";
+// import { Redis } from "@upstash/redis";
+// import { clerkClient } from "@clerk/nextjs/server";
 
-const redis =
-  !!process.env.UPSTASH_REDIS_REST_URL && !!process.env.UPSTASH_REDIS_REST_TOKEN
-    ? new Redis({
-        url: process.env.UPSTASH_REDIS_REST_URL,
-        token: process.env.UPSTASH_REDIS_REST_TOKEN,
-      })
-    : undefined;
-
-const isLocal = process.env.NODE_ENV !== "production";
+// Simplified limits without external dependencies
+// const redis = undefined;
+// const isLocal = process.env.NODE_ENV !== "production";
 
 // Limits
 const MINUTES_LIMIT_DEFAULT = 120;
 const TRANSFORM_LIMIT_DEFAULT = 10;
-const WINDOW = "1440 m"; // 1 day
+// const WINDOW = "1440 m"; // 1 day
 
-// Minutes per day limiters
-const minutesLimiter =
-  !isLocal && redis
-    ? new Ratelimit({
-        redis: redis,
-        limiter: Ratelimit.fixedWindow(MINUTES_LIMIT_DEFAULT, WINDOW),
-        analytics: true,
-        prefix: "minutes-limiter",
-      })
-    : undefined;
-
-// Transformations per day limiters
-const transformLimiter =
-  !isLocal && redis
-    ? new Ratelimit({
-        redis: redis,
-        limiter: Ratelimit.fixedWindow(TRANSFORM_LIMIT_DEFAULT, WINDOW),
-        analytics: true,
-        prefix: "transform-limiter",
-      })
-    : undefined;
+// No external limiters - everything uses fallback values
+// const minutesLimiter = undefined;
+// const transformLimiter = undefined;
 
 const fallbackMinutes = {
   success: true,
@@ -64,20 +40,21 @@ const fallbackTransformByok = {
   reset: null,
 };
 
-function isTogetherUser(email?: string) {
-  return email && email.endsWith("@together.ai");
-}
+// Removed external service dependencies
+// function isTogetherUser(email?: string) {
+//   return email && email.endsWith("@together.ai");
+// }
 
-async function getUserEmail(clerkUserId?: string) {
-  if (!clerkUserId) return undefined;
-  try {
-    const client = await clerkClient();
-    const user = await client.users.getUser(clerkUserId);
-    return user.emailAddresses?.[0]?.emailAddress;
-  } catch {
-    return undefined;
-  }
-}
+// async function getUserEmail(clerkUserId?: string) {
+//   if (!clerkUserId) return undefined;
+//   try {
+//     const client = await clerkClient();
+//     const user = await client.users.getUser(clerkUserId);
+//     return user.emailAddresses?.[0]?.emailAddress;
+//   } catch {
+//     return undefined;
+//   }
+// }
 
 export async function limitMinutes({
   clerkUserId,
@@ -88,21 +65,12 @@ export async function limitMinutes({
   isBringingKey?: boolean;
   minutes: number;
 }) {
-  const email = await getUserEmail(clerkUserId);
-
+  // Simplified - no external dependencies
   if (isBringingKey) {
     return fallbackMinutesByok;
   }
-  if (isTogetherUser(email)) {
-    return fallbackMinutes;
-  }
-  if (!clerkUserId || !minutesLimiter) {
-    return fallbackMinutes;
-  }
-
-  return await minutesLimiter.limit(clerkUserId, {
-    rate: minutes,
-  });
+  // Always return fallback limits for now
+  return fallbackMinutes;
 }
 
 export async function getMinutes({
@@ -112,17 +80,12 @@ export async function getMinutes({
   clerkUserId?: string;
   isBringingKey?: boolean;
 }) {
-  const email = await getUserEmail(clerkUserId);
+  // Simplified - no external dependencies
   if (isBringingKey) {
     return fallbackMinutesByok;
   }
-  if (isTogetherUser(email)) {
-    return fallbackMinutes;
-  }
-  if (!clerkUserId || !minutesLimiter) {
-    return fallbackMinutes;
-  }
-  return minutesLimiter.getRemaining(clerkUserId);
+  // Always return fallback limits for now
+  return fallbackMinutes;
 }
 
 export async function limitTransformations({
@@ -132,18 +95,12 @@ export async function limitTransformations({
   clerkUserId?: string;
   isBringingKey?: boolean;
 }) {
-  const email = await getUserEmail(clerkUserId);
+  // Simplified - no external dependencies
   if (isBringingKey) {
     return fallbackTransformByok;
   }
-  if (isTogetherUser(email)) {
-    return fallbackTransform;
-  }
-  if (!clerkUserId || !transformLimiter) {
-    return fallbackTransform;
-  }
-
-  return await transformLimiter.limit(clerkUserId);
+  // Always return fallback limits for now
+  return fallbackTransform;
 }
 
 export async function getTransformations({
@@ -153,21 +110,10 @@ export async function getTransformations({
   clerkUserId?: string;
   isBringingKey?: boolean;
 }) {
-  const email = await getUserEmail(clerkUserId);
+  // Simplified - no external dependencies
   if (isBringingKey) {
     return fallbackTransformByok;
   }
-  if (isTogetherUser(email)) {
-    return fallbackTransform;
-  }
-  if (!clerkUserId || !transformLimiter) {
-    return fallbackTransform;
-  }
-
-  try {
-    const result = await transformLimiter.getRemaining(clerkUserId);
-    return result;
-  } catch {
-    return fallbackTransform;
-  }
+  // Always return fallback limits for now
+  return fallbackTransform;
 }

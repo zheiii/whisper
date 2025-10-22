@@ -16,7 +16,6 @@ import { useOpenAIApiKey } from "./OpenAIApiKeyProvider";
 import useLocalStorage from "./hooks/useLocalStorage";
 import { AudioWaveform } from "./AudioWaveform";
 import { useAudioRecording } from "./hooks/useAudioRecording";
-import { useS3Upload } from "next-s3-upload";
 import { toast } from "sonner";
 import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
@@ -38,7 +37,22 @@ declare global {
 export function RecordingModal({ onClose }: RecordingModalProps) {
   const [language, setLanguage] = useLocalStorage("language", "en");
 
-  const { uploadToS3 } = useS3Upload();
+  // Local upload function
+  const uploadToLocal = async (file: File): Promise<{ url: string }> => {
+    const formData = new FormData();
+    formData.append("file", file);
+
+    const response = await fetch("/api/local-upload", {
+      method: "POST",
+      body: formData,
+    });
+
+    if (!response.ok) {
+      throw new Error("Failed to upload file");
+    }
+
+    return await response.json();
+  };
 
   const {
     recording,
@@ -61,7 +75,7 @@ export function RecordingModal({ onClose }: RecordingModalProps) {
 
   const router = useRouter();
   const transcribeMutation = useMutation(
-    trpc.whisper.transcribeFromS3.mutationOptions()
+    trpc.whisper.transcribeFromLocal.mutationOptions()
   );
 
   const queryClient = useQueryClient();
@@ -96,16 +110,16 @@ export function RecordingModal({ onClose }: RecordingModalProps) {
     }
     setIsProcessing("uploading");
     try {
-      // Upload to S3
+      // Upload to local storage
       const file = new File([audioBlob], `recording-${Date.now()}.webm`, {
         type: "audio/webm",
       });
-      const { url } = await uploadToS3(file);
+      const { url } = await uploadToLocal(file);
       // Call tRPC mutation
 
       setIsProcessing("transcribing");
 
-      const { id } = await transcribeMutation.mutateAsync({
+      const result = await transcribeMutation.mutateAsync({
         audioUrl: url,
         language,
         durationSeconds: duration,
@@ -115,7 +129,7 @@ export function RecordingModal({ onClose }: RecordingModalProps) {
         queryKey: trpc.whisper.listWhispers.queryKey(),
       });
       // Redirect to whisper page
-      router.push(`/whispers/${id}`);
+      router.push(`/whispers/${result.id}`);
     } catch (err) {
       toast.error("Failed to transcribe audio. Please try again.");
       setIsProcessing("idle");
