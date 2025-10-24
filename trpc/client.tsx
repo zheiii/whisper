@@ -6,7 +6,7 @@ import { createTRPCContext } from "@trpc/tanstack-react-query";
 import { useMemo } from "react";
 import { makeQueryClient } from "./query-client";
 import type { AppRouter } from "./routers/_app";
-import { useTogetherApiKey } from "../components/TogetherApiKeyProvider";
+import { useApiKeys } from "../components/ApiKeysProvider";
 
 export const { TRPCProvider, useTRPC } = createTRPCContext<AppRouter>();
 
@@ -36,7 +36,7 @@ export function TRPCReactProvider(
   }>
 ) {
   const queryClient = getQueryClient();
-  const { apiKey } = useTogetherApiKey();
+  const { openrouterKey, whisperKey } = useApiKeys();
   const trpcClient = useMemo(
     () =>
       createTRPCClient<AppRouter>({
@@ -45,12 +45,15 @@ export function TRPCReactProvider(
             // transformer: superjson, // Uncomment if you use superjson
             url: getUrl(),
             headers: () => {
-              return apiKey ? { TogetherAPIToken: apiKey } : {};
+              const headers: Record<string, string> = {};
+              if (openrouterKey) headers.OpenRouterAPIToken = openrouterKey;
+              if (whisperKey) headers.WhisperAPIToken = whisperKey;
+              return headers;
             },
           }),
         ],
       }),
-    [apiKey]
+    [openrouterKey, whisperKey]
   );
   return (
     <QueryClientProvider client={queryClient}>

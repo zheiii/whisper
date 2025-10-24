@@ -4,10 +4,8 @@ import { PrismaClient } from "../../lib/generated/prisma";
 import { v4 as uuidv4 } from "uuid";
 import { protectedProcedure } from "../init";
 import { limitMinutes } from "@/lib/limits";
-import {
-  togetherBaseClientWithKey,
-  togetherVercelAiClient,
-} from "@/lib/apiClients";
+import { transcribeFromUrl } from "@/lib/adapters/whisperapi";
+import { openRouterClient, getTitleModel } from "@/lib/adapters/openrouter";
 import { generateText } from "ai";
 
 const prisma = new PrismaClient();
@@ -48,7 +46,7 @@ export const whisperRouter = t.router({
 
       const limitResult = await limitMinutes({
         clerkUserId: ctx.auth.userId,
-        isBringingKey: !!ctx.togetherApiKey,
+        isBringingKey: !!ctx.whisperApiKey,
         minutes,
       });
 
@@ -56,27 +54,20 @@ export const whisperRouter = t.router({
         throw new Error("You have exceeded your daily audio minutes limit.");
       }
 
-      const res = await togetherBaseClientWithKey(
-        ctx.togetherApiKey
-      ).audio.transcriptions.create({
-        // @ts-ignore: Together API accepts file URL as string, even if types do not allow
-        file: input.audioUrl,
-        model: "openai/whisper-large-v3",
-        language: input.language || "en",
-      });
-
-      const transcription = res.text as string;
+      const transcription = await transcribeFromUrl(
+        input.audioUrl,
+        { language: input.language || "en" },
+        ctx.whisperApiKey
+      );
 
       // Generate a title from the transcription (first 8 words or fallback)
       const { text: title } = await generateText({
-        prompt: `Generate a title for the following transcription with max of 10 words/80 characters: 
+        prompt: `Generate a title for the following transcription with max of 10 words/80 characters:
         ${transcription}
-        
+
         Only return the title, nothing else, no explanation and no quotes or followup.
         `,
-        model: togetherVercelAiClient(ctx.togetherApiKey)(
-          "meta-llama/Llama-3.3-70B-Instruct-Turbo"
-        ),
+        model: openRouterClient(ctx.openRouterApiKey)(getTitleModel()),
         maxTokens: 10,
       });
 

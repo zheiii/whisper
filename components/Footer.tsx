@@ -6,19 +6,19 @@ export const Footer = () => {
         <a
           target="_blank"
           rel="noopenner"
-          href="https://togetherai.link/"
+          href="https://lemonfox.ai"
           className="text-xs text-center text-[#364153]"
         >
-          Whisper
+          Lemonfox
         </a>
-        <span className="text-xs text-center text-[#99a1af]"> on </span>
+        <span className="text-xs text-center text-[#99a1af]"> & </span>
         <a
           target="_blank"
           rel="noopenner"
-          href="https://togetherai.link/"
+          href="https://openrouter.ai"
           className="text-xs text-center text-[#364153]"
         >
-          Together.ai
+          OpenRouter
         </a>
       </p>
 

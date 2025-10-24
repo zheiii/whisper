@@ -17,7 +17,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { LoadingSection } from "@/components/whisper-page/LoadingSection";
 import { CustomMarkdown } from "@/components/CustomMarkdown";
-import { useTogetherApiKey } from "@/components/TogetherApiKeyProvider";
+import { useApiKeys } from "@/components/ApiKeysProvider";
 import { useLimits } from "@/components/hooks/useLimits";
 
 const DELAY_SAVE = 7_000; // 7 seconds
@@ -46,7 +46,7 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
     trpc.whisper.updateFullTranscription.mutationOptions()
   );
   const titleMutation = useMutation(trpc.whisper.updateTitle.mutationOptions());
-  const { apiKey } = useTogetherApiKey();
+  const { openrouterKey } = useApiKeys();
   const [streamingText, setStreamingText] = useState("");
   const [isStreaming, setIsStreaming] = useState(false);
   const { transformationsData, isLoading: isLimitsLoading } = useLimits();
@@ -122,7 +122,7 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
-          ...(apiKey ? { TogetherAPIToken: apiKey } : {}),
+          ...(openrouterKey ? { OpenRouterAPIToken: openrouterKey } : {}),
         },
         body: JSON.stringify({ whisperId: id, typeName }),
       });
