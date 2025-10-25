@@ -1,7 +1,7 @@
 import { NextRequest } from "next/server";
 import { PrismaClient } from "@/lib/generated/prisma";
 import { streamText } from "ai";
-import { togetherVercelAiClient } from "@/lib/apiClients";
+import { openRouterClient, getTransformModel } from "@/lib/adapters/openrouter";
 import { RECORDING_TYPES } from "@/lib/utils";
 import { getAuth } from "@clerk/nextjs/server";
 
@@ -18,8 +18,8 @@ export async function POST(req: NextRequest) {
       status: 401,
     });
   }
-  // Optionally get Together API key from header
-  const apiKey = req.headers.get("TogetherAPIToken") || undefined;
+  // Optionally get OpenRouter API key from header
+  const apiKey = req.headers.get("OpenRouterAPIToken") || undefined;
 
   // Find whisper
   const whisper = await prisma.whisper.findUnique({ where: { id: whisperId } });
@@ -72,9 +72,9 @@ export async function POST(req: NextRequest) {
   `;
 
   // Start streaming
-  const aiClient = togetherVercelAiClient(apiKey);
+  const aiClient = openRouterClient(apiKey);
   const { textStream } = streamText({
-    model: aiClient("meta-llama/Meta-Llama-3-70B-Instruct-Turbo"),
+    model: aiClient(getTransformModel()),
     prompt,
   });
 

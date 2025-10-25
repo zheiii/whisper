@@ -15,7 +15,7 @@ import { useTRPC } from "@/trpc/client";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { RecordingBasics } from "./RecordingBasics";
 import { RecordingMinutesLeft } from "./RecordingMinutesLeft";
-import { useTogetherApiKey } from "./TogetherApiKeyProvider";
+import { useApiKeys } from "./ApiKeysProvider";
 import useLocalStorage from "./hooks/useLocalStorage";
 import { useLimits } from "./hooks/useLimits";
 
@@ -42,8 +42,8 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
   const { uploadToS3 } = useS3Upload();
   const router = useRouter();
   const trpc = useTRPC();
-  const { apiKey } = useTogetherApiKey();
-  const isBYOK = !!apiKey;
+  const { whisperKey } = useApiKeys();
+  const isBYOK = !!whisperKey;
   const transcribeMutation = useMutation(
     trpc.whisper.transcribeFromS3.mutationOptions()
   );
@@ -80,9 +80,10 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
         router.push(`/whispers/${id}`);
       } catch (err) {
         toast.error("Failed to transcribe audio. Please try again.");
+        setIsProcessing("idle");
       }
     },
-    [uploadToS3, transcribeMutation, router]
+    [uploadToS3, transcribeMutation, router, language, queryClient, trpc]
   );
 
   return (

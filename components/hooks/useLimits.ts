@@ -1,19 +1,20 @@
 import { useTRPC } from "@/trpc/client";
 import { useUser } from "@clerk/nextjs";
 import { useQuery } from "@tanstack/react-query";
-import { useTogetherApiKey } from "../TogetherApiKeyProvider";
+import { useApiKeys } from "../ApiKeysProvider";
 
 export const useLimits = () => {
   const { user } = useUser();
-  const { apiKey } = useTogetherApiKey();
+  const { openrouterKey, whisperKey } = useApiKeys();
 
-  const isBYOK = !!apiKey;
+  const hasOpenRouterKey = !!openrouterKey;
+  const hasWhisperKey = !!whisperKey;
 
   const trpc = useTRPC();
   const { data: transformationsData, isLoading: isTransformationsLoading } =
     useQuery({
       ...trpc.limit.getTransformationsLeft.queryOptions(),
-      enabled: !!user && !isBYOK, // Don't fetch if BYOK (unlimited)
+      enabled: !!user && !hasOpenRouterKey, // Don't fetch if using OpenRouter BYOK (unlimited)
     });
 
   const { data: minutesData, isLoading: isMinutesLoading } = useQuery(

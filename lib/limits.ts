@@ -3,7 +3,9 @@ import { Redis } from "@upstash/redis";
 import { clerkClient } from "@clerk/nextjs/server";
 
 const redis =
-  !!process.env.UPSTASH_REDIS_REST_URL && !!process.env.UPSTASH_REDIS_REST_TOKEN
+  process.env.UPSTASH_REDIS_REST_URL?.startsWith("https://") &&
+  !!process.env.UPSTASH_REDIS_REST_TOKEN &&
+  process.env.UPSTASH_REDIS_REST_TOKEN !== "your_upstash_redis_token_here"
     ? new Redis({
         url: process.env.UPSTASH_REDIS_REST_URL,
         token: process.env.UPSTASH_REDIS_REST_TOKEN,
@@ -64,10 +66,6 @@ const fallbackTransformByok = {
   reset: null,
 };
 
-function isTogetherUser(email?: string) {
-  return email && email.endsWith("@together.ai");
-}
-
 async function getUserEmail(clerkUserId?: string) {
   if (!clerkUserId) return undefined;
   try {
@@ -88,13 +86,8 @@ export async function limitMinutes({
   isBringingKey?: boolean;
   minutes: number;
 }) {
-  const email = await getUserEmail(clerkUserId);
-
   if (isBringingKey) {
     return fallbackMinutesByok;
-  }
-  if (isTogetherUser(email)) {
-    return fallbackMinutes;
   }
   if (!clerkUserId || !minutesLimiter) {
     return fallbackMinutes;
@@ -112,12 +105,8 @@ export async function getMinutes({
   clerkUserId?: string;
   isBringingKey?: boolean;
 }) {
-  const email = await getUserEmail(clerkUserId);
   if (isBringingKey) {
     return fallbackMinutesByok;
-  }
-  if (isTogetherUser(email)) {
-    return fallbackMinutes;
   }
   if (!clerkUserId || !minutesLimiter) {
     return fallbackMinutes;
@@ -132,12 +121,8 @@ export async function limitTransformations({
   clerkUserId?: string;
   isBringingKey?: boolean;
 }) {
-  const email = await getUserEmail(clerkUserId);
   if (isBringingKey) {
     return fallbackTransformByok;
-  }
-  if (isTogetherUser(email)) {
-    return fallbackTransform;
   }
   if (!clerkUserId || !transformLimiter) {
     return fallbackTransform;
@@ -153,12 +138,8 @@ export async function getTransformations({
   clerkUserId?: string;
   isBringingKey?: boolean;
 }) {
-  const email = await getUserEmail(clerkUserId);
   if (isBringingKey) {
     return fallbackTransformByok;
-  }
-  if (isTogetherUser(email)) {
-    return fallbackTransform;
   }
   if (!clerkUserId || !transformLimiter) {
     return fallbackTransform;
