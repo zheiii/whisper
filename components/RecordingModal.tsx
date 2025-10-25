@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import {
   Dialog,
@@ -100,7 +100,10 @@ export function RecordingModal({ onClose }: RecordingModalProps) {
       const file = new File([audioBlob], `recording-${Date.now()}.webm`, {
         type: "audio/webm",
       });
-      const { url } = await uploadToS3(file);
+      const { url, key, bucket } = await uploadToS3(file);
+      if (!key) {
+        throw new Error("Upload succeeded but no S3 key was returned.");
+      }
 
       // Call tRPC mutation
       setIsProcessing("transcribing");
@@ -109,6 +112,8 @@ export function RecordingModal({ onClose }: RecordingModalProps) {
         audioUrl: url,
         language,
         durationSeconds: duration,
+        s3Key: key,
+        s3Bucket: bucket,
       });
       // Invalidate dashboard query
       await queryClient.invalidateQueries({
