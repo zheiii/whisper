@@ -7,6 +7,7 @@ import { limitMinutes } from "@/lib/limits";
 import { transcribeFromUrl } from "@/lib/adapters/whisperapi";
 import { openRouterClient, getTitleModel } from "@/lib/adapters/openrouter";
 import { generateText } from "ai";
+import { getPresignedGetUrl } from "@/lib/s3";
 
 const prisma = new PrismaClient();
 
@@ -36,6 +37,8 @@ export const whisperRouter = t.router({
         whisperId: z.string().optional(),
         language: z.string().optional(),
         durationSeconds: z.number().min(1),
+        s3Key: z.string().optional(),
+        s3Bucket: z.string().optional(),
       })
     )
     .mutation(async ({ input, ctx }) => {
@@ -54,8 +57,15 @@ export const whisperRouter = t.router({
         throw new Error("You have exceeded your daily audio minutes limit.");
       }
 
+      const downloadUrl = input.s3Key
+        ? await getPresignedGetUrl({
+            key: input.s3Key,
+            bucket: input.s3Bucket,
+          })
+        : input.audioUrl;
+
       const transcription = await transcribeFromUrl(
-        input.audioUrl,
+        downloadUrl,
         { language: input.language || "en" },
         ctx.whisperApiKey
       );
