@@ -62,16 +62,22 @@ export function UploadModal({ onClose }: { onClose: () => void }) {
       setIsProcessing("uploading");
       try {
         // Run duration extraction and S3 upload in parallel
-        const [duration, { url }] = await Promise.all([
+        const [duration, uploadResult] = await Promise.all([
           getDuration(file),
           uploadToS3(file),
         ]);
+        const { url, key, bucket } = uploadResult;
+        if (!key) {
+          throw new Error("Upload succeeded but no S3 key was returned.");
+        }
         // Call tRPC mutation
         setIsProcessing("transcribing");
         const { id } = await transcribeMutation.mutateAsync({
           audioUrl: url,
           language,
           durationSeconds: Math.round(duration),
+          s3Key: key,
+          s3Bucket: bucket,
         });
         // Invalidate dashboard query
         await queryClient.invalidateQueries({
