@@ -53,6 +53,7 @@ export function AudioWaveform({ analyserNode, isPaused }: AudioWaveformProps) {
         sum += sample * sample;
       }
       const rms = Math.sqrt(sum / bufferLength);
+
       startTransition(() => {
         setBars((prev) => {
           const newBars = [...prev, rms];
