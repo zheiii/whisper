@@ -5,6 +5,7 @@ import { v4 as uuidv4 } from "uuid";
 import { protectedProcedure } from "../init";
 import { limitMinutes } from "@/lib/limits";
 import { transcribeFromUrl } from "@/lib/adapters/whisperapi";
+import { transcribeWithInkWhisper } from "@/lib/adapters/inkwhisper";
 import { openRouterClient, getTitleModel } from "@/lib/adapters/openrouter";
 import { generateText } from "ai";
 import { getPresignedGetUrl } from "@/lib/s3";
@@ -64,11 +65,20 @@ export const whisperRouter = t.router({
           })
         : input.audioUrl;
 
-      const transcription = await transcribeFromUrl(
-        downloadUrl,
-        { language: input.language || "en" },
-        ctx.whisperApiKey
-      );
+      // Call both Whisper and Ink-Whisper in parallel
+      const [transcription, inkWhisperTranscription] = await Promise.all([
+        transcribeFromUrl(
+          downloadUrl,
+          { language: input.language || "en" },
+          ctx.whisperApiKey
+        ),
+        transcribeWithInkWhisper(downloadUrl, {
+          language: input.language || "en",
+        }).catch(() => {
+          // Don't fail the entire request if Ink-Whisper fails
+          return null;
+        }),
+      ]);
 
       // Generate a title from the transcription (first 8 words or fallback)
       const { text: title } = await generateText({
@@ -98,11 +108,14 @@ export const whisperRouter = t.router({
             language: input.language,
           },
         });
-        // Append to fullTranscription
+        // Append to fullTranscription and inkWhisperTranscription
         await prisma.whisper.update({
           where: { id: input.whisperId },
           data: {
             fullTranscription: whisper.fullTranscription + "\n" + transcription,
+            inkWhisperTranscription: inkWhisperTranscription
+              ? (whisper.inkWhisperTranscription || "") + "\n" + inkWhisperTranscription
+              : whisper.inkWhisperTranscription,
           },
         });
       } else {
@@ -113,6 +126,7 @@ export const whisperRouter = t.router({
             title: title.slice(0, 80),
             userId: ctx.auth.userId,
             fullTranscription: transcription,
+            inkWhisperTranscription: inkWhisperTranscription || undefined,
             audioTracks: {
               create: [
                 {

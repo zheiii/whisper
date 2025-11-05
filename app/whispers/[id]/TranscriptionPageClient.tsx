@@ -107,6 +107,8 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
   const getSelectedTransformation = () => {
     if (selectedTransformationId === "base")
       return whisper?.fullTranscription || "";
+    if (selectedTransformationId === "ink-whisper")
+      return whisper?.inkWhisperTranscription || "";
     const all = getAllTransformations();
     const t = all.find((t) => t.id === selectedTransformationId);
     return t ? t.text : whisper?.fullTranscription || "";
@@ -217,6 +219,14 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
           aria-label="Edit transcription"
           disabled={trpcMutation.status === "pending"}
         />
+      );
+    }
+    // Handle Ink-Whisper transcription
+    if (selectedTransformationId === "ink-whisper") {
+      return (
+        <div className="whitespace-pre-line rounded p-2 min-h-[120px] w-full bg-white text-slate-800 flex flex-col gap-0.5">
+          <CustomMarkdown>{whisper?.inkWhisperTranscription || "No Ink-Whisper transcription available"}</CustomMarkdown>
+        </div>
       );
     }
     // Find transformation
@@ -340,6 +350,8 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
                     : (() => {
                         if (selectedTransformationId === "base")
                           return "Transcript";
+                        if (selectedTransformationId === "ink-whisper")
+                          return "Ink-Whisper";
                         const t = labeledTransformations.find(
                           (t) => t.id === selectedTransformationId
                         );
@@ -372,6 +384,15 @@ export default function TranscriptionPageClient({ id }: { id: string }) {
               >
                 Transcript
               </DropdownMenuItem>
+              {whisper?.inkWhisperTranscription && (
+                <DropdownMenuItem
+                  onSelect={() => setSelectedTransformationId("ink-whisper")}
+                  disabled={isStreaming || isCurrentGenerating}
+                  className="text-sm"
+                >
+                  Ink-Whisper
+                </DropdownMenuItem>
+              )}
               {labeledTransformations.map((t) => (
                 <DropdownMenuItem
                   key={t.id}

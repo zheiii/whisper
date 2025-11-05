@@ -15,12 +15,13 @@ datasource db {
 }
 
 model Whisper {
-  id                String       @id @default(uuid())
-  title             String
-  userId            String
-  createdAt         DateTime     @default(now())
-  fullTranscription String
-  audioTracks       AudioTrack[]
+  id                      String       @id @default(uuid())
+  title                   String
+  userId                  String
+  createdAt               DateTime     @default(now())
+  fullTranscription       String
+  inkWhisperTranscription String?
+  audioTracks             AudioTrack[]
 
   transformations Transformation[]
 }
