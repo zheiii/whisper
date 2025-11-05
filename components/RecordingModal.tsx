@@ -21,12 +21,6 @@ import { useRouter } from "next/navigation";
 import { useMutation, useQueryClient } from "@tanstack/react-query";
 import { useLimits } from "./hooks/useLimits";
 import { useS3Upload } from "next-s3-upload";
-import {
-  getLatestRecording,
-  deleteRecording,
-  deleteOldRecordings,
-  hasActiveRecording,
-} from "@/lib/recordingStorage";
 
 interface RecordingModalProps {
   onClose: () => void;
@@ -45,41 +39,6 @@ export function RecordingModal({ onClose }: RecordingModalProps) {
   const [language, setLanguage] = useLocalStorage("language", "en");
   const [recordSystemAudio, setRecordSystemAudio] = useLocalStorage("recordSystemAudio", false);
 
-
-  // Check for saved recordings on mount (for recovery from crashes/disconnections)
-  useEffect(() => {
-    const checkForSavedRecording = async () => {
-      try {
-        // Clean up old recordings (older than 24 hours)
-        await deleteOldRecordings();
-
-        // Check if there's an interrupted recording to recover
-        const hasActive = await hasActiveRecording();
-        if (hasActive) {
-          const latest = await getLatestRecording();
-          if (latest && latest.duration > 5) { // Only recover if recording was > 5 seconds
-            const success = await recoverRecording(latest);
-            if (success) {
-              toast.success(
-                `Recovered interrupted recording (${Math.floor(latest.duration / 60)}:${(latest.duration % 60).toString().padStart(2, '0')}). You can save it now.`,
-                { duration: 8000 }
-              );
-            } else {
-              await deleteRecording(latest.id);
-            }
-          } else if (latest) {
-            // Too short, just delete it
-            await deleteRecording(latest.id);
-          }
-        }
-      } catch (err) {
-        // Silently handle error
-      }
-    };
-
-    checkForSavedRecording();
-  }, [recoverRecording]);
-
   const { uploadToS3 } = useS3Upload();
 
   const {
@@ -94,7 +53,6 @@ export function RecordingModal({ onClose }: RecordingModalProps) {
     pauseRecording,
     resumeRecording,
     resetRecording,
-    recoverRecording,
   } = useAudioRecording({ recordSystemAudio });
 
 
@@ -160,17 +118,6 @@ export function RecordingModal({ onClose }: RecordingModalProps) {
         s3Key: key,
         s3Bucket: bucket,
       });
-
-      // Clean up saved recording data after successful upload
-      try {
-        const latest = await getLatestRecording();
-        if (latest) {
-          await deleteRecording(latest.id);
-        }
-      } catch (err) {
-        // Non-critical error, continue
-      }
-
       // Invalidate dashboard query
       await queryClient.invalidateQueries({
         queryKey: trpc.whisper.listWhispers.queryKey(),

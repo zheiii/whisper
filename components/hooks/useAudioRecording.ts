@@ -1,11 +1,4 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import {
-  saveRecordingMetadata,
-  saveAudioChunk,
-  getRecordingChunks,
-  deleteRecording,
-  RecordingMetadata,
-} from "@/lib/recordingStorage";
 
 /**
  * Configuration options for audio recording
@@ -67,10 +60,6 @@ export function useAudioRecording(options: UseAudioRecordingOptions = {}) {
   const displayStreamRef = useRef<MediaStream | null>(null);
   const chunksRef = useRef<Blob[]>([]);
   const timerRef = useRef<NodeJS.Timeout | null>(null);
-  const visibilityListenerRef = useRef<(() => void) | null>(null);
-  const recordingIdRef = useRef<string | null>(null);
-  const chunkCountRef = useRef<number>(0);
-  const metadataUpdateTimerRef = useRef<NodeJS.Timeout | null>(null);
 
   // Clean up all resources
   const cleanup = useCallback(() => {
@@ -96,18 +85,10 @@ export function useAudioRecording(options: UseAudioRecordingOptions = {}) {
       analyserRef.current.disconnect();
       analyserRef.current = null;
     }
-    if (visibilityListenerRef.current) {
-      document.removeEventListener("visibilitychange", visibilityListenerRef.current);
-      visibilityListenerRef.current = null;
-    }
     setAnalyserNode(null);
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
-    }
-    if (metadataUpdateTimerRef.current) {
-      clearInterval(metadataUpdateTimerRef.current);
-      metadataUpdateTimerRef.current = null;
     }
   }, []);
 
@@ -117,12 +98,8 @@ export function useAudioRecording(options: UseAudioRecordingOptions = {}) {
     setError(null);
     setDuration(0);
     chunksRef.current = [];
-    chunkCountRef.current = 0;
 
-    // Generate unique recording ID for persistence
-    recordingIdRef.current = `recording_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
-
-    try {
+    try{
       // Get microphone audio
       const micStream = await navigator.mediaDevices.getUserMedia({ audio: true });
       streamRef.current = micStream;
@@ -218,24 +195,9 @@ export function useAudioRecording(options: UseAudioRecordingOptions = {}) {
       analyserRef.current = analyser;
       setAnalyserNode(analyser);
 
-      mediaRecorder.ondataavailable = async (e) => {
+      mediaRecorder.ondataavailable = (e) => {
         if (e.data.size > 0) {
           chunksRef.current.push(e.data);
-
-          // Save chunk to IndexedDB for persistence (crash/disconnect recovery)
-          if (recordingIdRef.current) {
-            try {
-              await saveAudioChunk({
-                recordingId: recordingIdRef.current,
-                chunkIndex: chunkCountRef.current,
-                blob: e.data,
-                timestamp: Date.now(),
-              });
-              chunkCountRef.current++;
-            } catch (err) {
-              // Silently handle chunk save error
-            }
-          }
         }
       };
       mediaRecorder.onstop = () => {
@@ -253,61 +215,14 @@ export function useAudioRecording(options: UseAudioRecordingOptions = {}) {
         await audioContext.resume();
       }
 
-      // Start with timeslice of 10 seconds to save data periodically
-      // This prevents data loss if browser crashes or disconnects
-      mediaRecorder.start(10000);
+      // Start recording
+      mediaRecorder.start();
 
       setRecording(true);
       setPaused(false);
       timerRef.current = setInterval(() => {
         setDuration((d) => d + 1);
       }, 1000);
-
-      // Save initial recording metadata for crash recovery
-      if (recordingIdRef.current) {
-        const metadata: RecordingMetadata = {
-          id: recordingIdRef.current,
-          startTime: Date.now(),
-          duration: 0,
-          language: "en",
-          recordSystemAudio,
-          paused: false,
-          lastUpdate: Date.now(),
-        };
-        try {
-          await saveRecordingMetadata(metadata);
-        } catch (err) {
-          // Silently handle metadata save error
-        }
-
-        // Set up periodic metadata updates (every 5 seconds) for recovery
-        metadataUpdateTimerRef.current = setInterval(async () => {
-          if (recordingIdRef.current) {
-            try {
-              await saveRecordingMetadata({
-                id: recordingIdRef.current,
-                startTime: metadata.startTime,
-                duration: duration,
-                language: metadata.language,
-                recordSystemAudio,
-                paused,
-                lastUpdate: Date.now(),
-              });
-            } catch (err) {
-              // Silently handle metadata update error
-            }
-          }
-        }, 5000);
-      }
-
-      // Add visibility change listener to keep AudioContext alive
-      const handleVisibilityChange = () => {
-        if (!document.hidden && audioContext.state === "suspended") {
-          audioContext.resume();
-        }
-      };
-      document.addEventListener("visibilitychange", handleVisibilityChange);
-      visibilityListenerRef.current = handleVisibilityChange;
     } catch (err) {
       setError("Microphone access denied or unavailable.");
       cleanup();
@@ -315,7 +230,7 @@ export function useAudioRecording(options: UseAudioRecordingOptions = {}) {
   }, [cleanup, recordSystemAudio]);
 
   // Stop recording
-  const stopRecording = useCallback(async () => {
+  const stopRecording = useCallback(() => {
     if (
       mediaRecorderRef.current &&
       mediaRecorderRef.current.state !== "inactive"
@@ -327,16 +242,6 @@ export function useAudioRecording(options: UseAudioRecordingOptions = {}) {
     if (timerRef.current) {
       clearInterval(timerRef.current);
       timerRef.current = null;
-    }
-
-    // Clean up saved recording data since we stopped successfully
-    if (recordingIdRef.current) {
-      try {
-        await deleteRecording(recordingIdRef.current);
-      } catch (err) {
-        // Silently handle deletion error
-      }
-      recordingIdRef.current = null;
     }
   }, []);
 
@@ -382,32 +287,6 @@ export function useAudioRecording(options: UseAudioRecordingOptions = {}) {
     chunksRef.current = [];
   }, [cleanup]);
 
-  // Recover a saved recording from IndexedDB
-  const recoverRecording = useCallback(
-    async (metadata: RecordingMetadata): Promise<boolean> => {
-      try {
-        const savedChunks = await getRecordingChunks(metadata.id);
-        if (savedChunks.length === 0) {
-          return false;
-        }
-
-        // Restore state
-        chunksRef.current = savedChunks;
-        const blob = new Blob(savedChunks, { type: "audio/webm" });
-        setAudioBlob(blob);
-        setDuration(metadata.duration);
-        setRecording(false);
-        setPaused(false);
-
-        return true;
-      } catch (err) {
-        return false;
-      }
-    },
-    []
-  );
-
-
   // Clean up on unmount
   useEffect(() => {
     return () => {
@@ -428,6 +307,5 @@ export function useAudioRecording(options: UseAudioRecordingOptions = {}) {
     pauseRecording,
     resumeRecording,
     resetRecording,
-    recoverRecording,
   };
 }
