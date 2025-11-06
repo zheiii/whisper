@@ -11,8 +11,9 @@
   },
   "dependencies": {
     "@ai-sdk/openai": "^1.0.0",
-    "@aws-sdk/client-s3": "^3.705.0",
-    "@aws-sdk/s3-request-presigner": "^3.705.0",
+    "@aws-sdk/client-s3": "^3.919.0",
+    "@aws-sdk/s3-request-presigner": "^3.919.0",
+    "@cartesia/cartesia-js": "^2.2.7",
     "@clerk/nextjs": "^6.28.0",
     "@prisma/client": "^6.11.1",
     "@radix-ui/react-dialog": "^1.1.14",
