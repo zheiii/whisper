@@ -3,13 +3,14 @@
 import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MoreHorizontal, Search } from "lucide-react";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { MoreHorizontal, Search, Mic, Upload, Trash2, X } from "lucide-react";
 import { RecordingModal } from "@/components/RecordingModal";
 import type { Transcription } from "@/app/page";
 import { UploadModal } from "./UploadModal";
 import { formatWhisperTimestamp } from "@/lib/utils";
 import Link from "next/link";
-import { Trash2 } from "lucide-react";
 import {
   DropdownMenu,
   DropdownMenuTrigger,
@@ -18,6 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { useTRPC } from "@/trpc/client";
 import { useMutation } from "@tanstack/react-query";
+import { motion, AnimatePresence } from "framer-motion";
 
 interface DashboardProps {
   transcriptions: Transcription[];
@@ -93,127 +95,209 @@ export function Dashboard({ transcriptions }: DashboardProps) {
 
   return (
     <>
-      <div className="flex-1 h-full mx-auto w-full">
-        <div className="mb-8">
-          <div className="mx-auto max-w-[729px] w-full md:rounded-xl bg-white border-b-[0.7px] md:border-[0.7px] border-gray-200 md:border-[#d1d5dc] px-6 py-5 flex flex-col gap-3 md:my-4 ">
-            <h1 className="text-xl font-semibold text-left text-[#101828]">
+      <div className="flex-1 h-full mx-auto w-full pb-24">
+        <div className="mx-auto max-w-4xl px-4 py-6 md:py-8">
+          {/* Header Section */}
+          <motion.div
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="mb-8"
+          >
+            <h1 className="text-3xl font-bold text-[#101828] mb-2">
               Your Whispers
             </h1>
+            <p className="text-sm text-muted-foreground">
+              {localTranscriptions.length} recording
+              {localTranscriptions.length !== 1 ? "s" : ""}
+            </p>
+          </motion.div>
 
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-4 h-4 text-muted-foreground" />
+          {/* Search Bar */}
+          <motion.div
+            initial={{ opacity: 0, y: -10 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.4, delay: 0.1 }}
+            className="mb-6"
+          >
+            <div className="relative group">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground transition-colors group-focus-within:text-primary" />
               <Input
-                placeholder="Search"
+                placeholder="Search whispers..."
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
-                className="pl-10"
+                className="pl-10 pr-10 h-11 bg-background border-input transition-all focus-visible:ring-2 focus-visible:ring-ring/20"
               />
+              <AnimatePresence>
+                {searchQuery && (
+                  <motion.button
+                    initial={{ opacity: 0, scale: 0.8 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    exit={{ opacity: 0, scale: 0.8 }}
+                    transition={{ duration: 0.15 }}
+                    onClick={() => setSearchQuery("")}
+                    className="absolute right-3 top-1/2 -translate-y-1/2 p-1 rounded-md hover:bg-accent transition-colors"
+                    aria-label="Clear search"
+                  >
+                    <X className="w-4 h-4 text-muted-foreground" />
+                  </motion.button>
+                )}
+              </AnimatePresence>
             </div>
-          </div>
+          </motion.div>
 
-          {/* Empty State or Transcriptions List */}
+          {/* Empty State */}
           {filteredTranscriptions.length === 0 && searchQuery === "" ? (
-            <div className="text-center py-16 flex flex-col items-center">
-              <h2 className="text-xl font-medium text-left text-black mb-2">
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.4, delay: 0.2 }}
+              className="flex flex-col items-center justify-center py-20 px-4"
+            >
+              <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4">
+                <Mic className="w-8 h-8 text-primary" />
+              </div>
+              <h2 className="text-2xl font-semibold text-[#101828] mb-2">
                 Welcome, whisperer!
               </h2>
-              <p className="max-w-[264px] text-base text-center text-[#364153] mb-8">
-                Start by creating a new Whisper, or
-                <br />
-                upload a voice note for
-                <br />
+              <p className="text-base text-center text-muted-foreground max-w-sm mb-8">
+                Start by creating a new Whisper or upload a voice note for
                 transcription
               </p>
-            </div>
+            </motion.div>
+          ) : filteredTranscriptions.length === 0 ? (
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.3 }}
+              className="flex flex-col items-center justify-center py-16 px-4"
+            >
+              <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mb-4">
+                <Search className="w-8 h-8 text-muted-foreground" />
+              </div>
+              <h3 className="text-lg font-medium text-[#101828] mb-2">
+                No results found
+              </h3>
+              <p className="text-sm text-center text-muted-foreground">
+                Try adjusting your search query
+              </p>
+            </motion.div>
           ) : (
-            <div className="flex flex-col justify-start items-start relative space-y-4 mx-auto max-w-[727px]">
-              {filteredTranscriptions.map((transcription) =>
-                isDesktop ? (
-                  <div key={transcription.id} className="relative w-full">
-                    <Link
-                      href={`/whispers/${transcription.id}`}
-                      className="self-stretch flex-grow-0 flex-shrink-0 h-[121px] overflow-hidden group border-t-0 border-r-0 border-b-[0.7px] border-l-0 border-gray-200 md:border-[0.7px] md:border-transparent md:rounded-xl focus-within:bg-gray-50 focus-within:border-[#d1d5dc] hover:bg-gray-50 hover:border-[#d1d5dc] transition-all flex flex-col justify-between px-6 py-4 pr-14"
-                      tabIndex={0}
-                    >
-                      <p className="text-base font-medium text-left text-[#101828] mb-2">
-                        {transcription.title}
-                      </p>
-                      <p className="text-sm text-left text-[#4a5565] mb-4 line-clamp-2">
-                        {transcription.preview}
-                      </p>
-                      <p className="text-xs text-left text-[#99a1af] mt-auto">
-                        {formatWhisperTimestamp(transcription.timestamp)}
-                      </p>
-                    </Link>
-                    <div className="absolute top-4 right-6 z-10">
-                      <DropdownMenu>
-                        <DropdownMenuTrigger asChild>
-                          <button
-                            className="p-2 cursor-pointer rounded-md bg-transparent hover:bg-gray-100 focus:outline-none focus:bg-gray-100"
-                            aria-label="More actions"
-                            onClick={(e) => e.stopPropagation()}
-                          >
-                            <MoreHorizontal className="w-5 h-5 text-gray-500" />
-                          </button>
-                        </DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                          <DropdownMenuItem
-                            variant="destructive"
-                            onClick={() => handleDelete(transcription.id)}
-                          >
-                            <Trash2 className="w-4 h-4 text-red-600" />
-                            <span>Delete</span>
-                          </DropdownMenuItem>
-                        </DropdownMenuContent>
-                      </DropdownMenu>
-                    </div>
-                  </div>
-                ) : (
-                  <Link
-                    href={`/whispers/${transcription.id}`}
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              transition={{ duration: 0.4, delay: 0.2 }}
+              className="space-y-3"
+            >
+              <AnimatePresence mode="popLayout">
+                {filteredTranscriptions.map((transcription, index) => (
+                  <motion.div
                     key={transcription.id}
-                    className="self-stretch flex-grow-0 flex-shrink-0 h-[121px] overflow-hidden group border-t-0 border-r-0 border-b-[0.7px] border-l-0 border-gray-200 md:border-[0.7px] md:border-transparent md:rounded-xl focus-within:bg-gray-50 focus-within:border-[#d1d5dc] hover:bg-gray-50 hover:border-[#d1d5dc] transition-all flex flex-col justify-between px-6 py-4"
-                    tabIndex={0}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, x: -100 }}
+                    transition={{
+                      duration: 0.3,
+                      delay: index * 0.05,
+                      ease: "easeOut",
+                    }}
+                    layout
                   >
-                    <p className="text-base font-medium text-left text-[#101828] mb-2">
-                      {transcription.title}
-                    </p>
-                    <p className="text-sm text-left text-[#4a5565] mb-4 line-clamp-2">
-                      {transcription.preview}
-                    </p>
-                    <p className="text-xs text-left text-[#99a1af] mt-auto">
-                      {formatWhisperTimestamp(transcription.timestamp)}
-                    </p>
-                  </Link>
-                )
-              )}
-            </div>
+                    <Card className="group relative overflow-hidden border border-border/40 hover:border-border hover:shadow-md transition-all duration-300">
+                      <Link
+                        href={`/whispers/${transcription.id}`}
+                        className="block p-4 md:p-5 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 rounded-xl"
+                      >
+                        <div className="flex items-start justify-between gap-4">
+                          <div className="flex-1 min-w-0 space-y-2">
+                            {/* Title */}
+                            <h3 className="text-base font-semibold text-[#101828] line-clamp-1 group-hover:text-primary transition-colors">
+                              {transcription.title}
+                            </h3>
+
+                            {/* Preview */}
+                            <p className="text-sm text-muted-foreground line-clamp-2 leading-relaxed">
+                              {transcription.preview}
+                            </p>
+
+                            {/* Timestamp Badge */}
+                            <div className="flex items-center gap-2 pt-1">
+                              <Badge
+                                variant="secondary"
+                                className="text-xs font-normal bg-muted/50 hover:bg-muted/70 transition-colors"
+                              >
+                                {formatWhisperTimestamp(transcription.timestamp)}
+                              </Badge>
+                            </div>
+                          </div>
+
+                          {/* Actions Menu (Desktop) */}
+                          {isDesktop && (
+                            <div className="flex-shrink-0 opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                              <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                  <button
+                                    className="p-2 rounded-md hover:bg-accent focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring transition-colors"
+                                    aria-label="More actions"
+                                    onClick={(e) => e.preventDefault()}
+                                  >
+                                    <MoreHorizontal className="w-4 h-4 text-muted-foreground" />
+                                  </button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                  <DropdownMenuItem
+                                    variant="destructive"
+                                    onClick={(e) => {
+                                      e.preventDefault();
+                                      handleDelete(transcription.id);
+                                    }}
+                                  >
+                                    <Trash2 className="w-4 h-4 text-red-600" />
+                                    <span>Delete</span>
+                                  </DropdownMenuItem>
+                                </DropdownMenuContent>
+                              </DropdownMenu>
+                            </div>
+                          )}
+                        </div>
+                      </Link>
+                    </Card>
+                  </motion.div>
+                ))}
+              </AnimatePresence>
+            </motion.div>
           )}
         </div>
 
-        {/* Action Buttons */}
-        <div className="fixed bottom-0 left-1/2 -translate-x-1/2 w-full max-w-[688px] flex justify-center items-center px-6 pb-4">
-          <div className="grid grid-cols-1 gap-3 md:grid-cols-2 md:gap-3 w-full">
-            <Button
-              variant="outline"
-              size="lg"
-              onClick={handleUploadVoiceNote}
-              className="w-full rounded-lg bg-gray-100 border border-[#d1d5dc] text-base h-[42px]"
-            >
-              <img src="/upload.svg" className="w-5 h-5 size-5" />
-              Upload Voice Note
-            </Button>
-            <Button
-              size="lg"
-              onClick={handleNewWhisper}
-              className="w-full bg-[#101828] text-base text-left text-white rounded-lg h-[42px]"
-            >
-              <img src="/microphone.svg" className="w-5 h-5 size-5" />
-              New Whisper
-              {/* <img src="/command.svg" className="w-[87px] h-[16px]" /> */}
-            </Button>
+        {/* Floating Action Buttons */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ duration: 0.5, delay: 0.3 }}
+          className="fixed bottom-0 left-0 right-0 z-40 bg-gradient-to-t from-background via-background to-transparent pt-8 pb-6"
+        >
+          <div className="mx-auto max-w-4xl px-4">
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              <Button
+                variant="outline"
+                size="lg"
+                onClick={handleUploadVoiceNote}
+                className="w-full h-12 text-base font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] bg-background"
+              >
+                <Upload className="w-5 h-5" />
+                Upload Voice Note
+              </Button>
+              <Button
+                size="lg"
+                onClick={handleNewWhisper}
+                className="w-full h-12 text-base font-medium shadow-lg hover:shadow-xl transition-all duration-300 hover:scale-[1.02] bg-[#101828] hover:bg-[#101828]/90"
+              >
+                <Mic className="w-5 h-5" />
+                New Whisper
+              </Button>
+            </div>
           </div>
-        </div>
+        </motion.div>
       </div>
 
       {/* Recording Modal */}
